@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coeus"
+version = "0.1.0"
+description = "Coeus — Strategic Planning Consultant CLI. Interview-first planning with Metis review and Momus validation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "othrys",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+coeus = "coeus.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coeus"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

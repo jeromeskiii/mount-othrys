@@ -1,0 +1,125 @@
+#!/bin/bash
+# Mount Othrys CLI — Unified Titan Intelligence
+# TypeScript Engine (brain) → Router → Titan Adapter Layer → Python Services (workers)
+
+set -e
+
+MOUNT_OTHRYS_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ENGINE_DIR="$MOUNT_OTHRYS_ROOT/engine"
+
+show_help() {
+    cat << 'EOF'
+Mount Othrys — Unified Titan Intelligence
+
+Usage: mount-othrys <command> [args]
+
+Commands:
+    route <message>       Classify and route a request to the appropriate Titan
+    titan [name]          Show Titan info or list all Titans
+    ask <message>         Route and execute a natural-language request
+    config                View or edit engine configuration
+    status                Show status of all Titans
+
+Titan Modes (PRD-aligned):
+    heracles              Strict, verified execution
+    talos                 Fast/default execution
+    coeus                 Strategic planning
+    themis                Advisory/review
+    atlas                 System design
+    iapetus               Risk analysis
+
+Python Services (workers):
+    coeus                 Run Coeus planning service
+    atlas                 Run Atlas system design service
+    iapetus               Run Iapetus risk analysis service
+    talos                 Run Talos default execution service
+
+Examples:
+    mount-othrys route "plan this feature"
+    mount-othrys ask "fix the auth bug"
+    mount-othrys titan --list
+    mount-othrys ask --titan iapetus "what can break if we deploy this"
+EOF
+}
+
+show_status() {
+    echo "=== Mount Othrys — Titan Status ==="
+    echo ""
+    
+    for titan in atlas Coeus Iapetus Talos Heracles Themis; do
+        if [ -d "$MOUNT_OTHRYS_ROOT/$titan" ] || [ -d "$MOUNT_OTHRYS_ROOT/${titan,,}" ]; then
+            echo "✓ $titan"
+        else
+            echo "✗ $titan (missing)"
+        fi
+    done
+    
+    echo ""
+    echo "=== Engine ==="
+    if [ -d "$ENGINE_DIR/dist" ]; then
+        echo "✓ TypeScript engine built"
+    else
+        echo "✗ TypeScript engine not built (run: cd engine && npm run build)"
+    fi
+    
+    echo ""
+    echo "=== Python Services ==="
+    for titan in atlas Coeus Iapetus Talos; do
+        titan_dir="$MOUNT_OTHRYS_ROOT/$titan"
+        titan_lower=$(echo "$titan" | tr '[:upper:]' '[:lower:]')
+        if [ -d "$titan_dir/.venv" ] || [ -d "$MOUNT_OTHRYS_ROOT/${titan_lower}/.venv" ]; then
+            echo "✓ $titan venv exists"
+        else
+            echo "✗ $titan venv missing"
+        fi
+    done
+}
+
+run_engine() {
+    cd "$ENGINE_DIR"
+    exec npx tsx src/cli.ts "$@"
+}
+
+run_python_titan() {
+    local titan="$1"
+    shift
+    local titan_dir
+    
+    case "$titan" in
+        coeus)   titan_dir="$MOUNT_OTHRYS_ROOT/Coeus" ;;
+        atlas)   titan_dir="$MOUNT_OTHRYS_ROOT/atlas" ;;
+        iapetus)  titan_dir="$MOUNT_OTHRYS_ROOT/Iapetus" ;;
+        talos)    titan_dir="$MOUNT_OTHRYS_ROOT/Talos" ;;
+        *)        echo "Unknown Python Titan: $titan"; exit 1 ;;
+    esac
+    
+    local python_bin="$titan_dir/.venv/bin/python"
+    if [ ! -f "$python_bin" ]; then
+        echo "Error: Python venv not found at $python_bin"
+        echo "Run: cd $titan_dir && pip install -e ."
+        exit 1
+    fi
+    
+    cd "$titan_dir"
+    exec "$python_bin" -m "$titan" "$@"
+}
+
+case "${1:-help}" in
+    help|--help|-h)
+        show_help
+        ;;
+    route|titan|ask|config)
+        run_engine "$@"
+        ;;
+    status)
+        show_status
+        ;;
+    coeus|atlas|iapetus|talos)
+        run_python_titan "$@"
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Run 'mount-othrys help' for usage"
+        exit 1
+        ;;
+esac
