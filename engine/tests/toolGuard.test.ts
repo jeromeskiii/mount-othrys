@@ -12,6 +12,21 @@ describe('tool guard', () => {
     expect(result.blockedReason).toMatch(/Blocked command/)
   })
 
+  it('blocks rm with double spaces', () => {
+    const result = guardCommand('rm  -rf  /')
+    expect(result.allowed).toBe(false)
+  })
+
+  it('allows rm on subdirectories', () => {
+    expect(guardCommand('rm -rf /tmp/safe_dir').allowed).toBe(true)
+    expect(guardCommand('rm -rf ./node_modules').allowed).toBe(true)
+  })
+
+  it('blocks git push --force but allows --force-with-lease', () => {
+    expect(guardCommand('git push --force').allowed).toBe(false)
+    expect(guardCommand('git push --force-with-lease').allowed).toBe(true)
+  })
+
   it('allows paths inside workdir', () => {
     const result = guardFilePath('/tmp/project/file.txt', '/tmp/project')
     expect(result.allowed).toBe(true)
@@ -19,6 +34,11 @@ describe('tool guard', () => {
 
   it('blocks paths outside workdir', () => {
     const result = guardFilePath('/tmp/other/file.txt', '/tmp/project')
+    expect(result.allowed).toBe(false)
+  })
+
+  it('blocks path traversal via ..', () => {
+    const result = guardFilePath('../../../etc/passwd', '/tmp/project')
     expect(result.allowed).toBe(false)
   })
 

@@ -37,9 +37,10 @@ export function loadConfig(overrides?: Partial<EngineConfig>): EngineConfig {
 
 export function resolveVenvs(rootDir: string): Record<string, string> {
   return {
-    coeus: `${rootDir}/Coeus/.venv/bin/python`,
+    kronos: `${rootDir}/kronos/.venv/bin/python`,
+    coeus: `${rootDir}/coeus/.venv/bin/python`,
     atlas: `${rootDir}/atlas/.venv/bin/python`,
-    iapetus: `${rootDir}/Iapetus/.venv/bin/python`,
-    talos: `${rootDir}/Talos/.venv/bin/python`,
+    iapetus: `${rootDir}/iapetus/.venv/bin/python`,
+    talos: `${rootDir}/talos/.venv/bin/python`,
   }
 }

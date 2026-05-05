@@ -1,5 +1,6 @@
 import { TitanMode } from '../modes/types.js'
 import { TitanAdapter, TitanInput, TitanOutput } from './types.js'
+import { OpenAIProvider } from '../providers/OpenAIProvider.js'
 
 const THEMIS_SYSTEM_PROMPT = `You are Themis — Strategic Technical Advisor.
 
@@ -19,22 +20,53 @@ not exhaustive analysis.
 - One clear path
 - Dense and useful beats long and thorough`
 
+export interface ThemisAdapterOptions {
+  apiKey: string
+  model?: string
+}
+
 export class ThemisAdapter implements TitanAdapter {
   name = 'Themis'
   mode = TitanMode.THEMIS
+  private provider: OpenAIProvider
+
+  constructor(options: ThemisAdapterOptions) {
+    this.provider = new OpenAIProvider({
+      apiKey: options.apiKey,
+      defaultModel: options.model ?? 'gpt-5.2',
+    })
+  }
 
   async execute(input: TitanInput): Promise<TitanOutput> {
-    const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
-    return {
-      output: `${THEMIS_SYSTEM_PROMPT}\n\n## User Request\n\n${prompt}`,
-      metadata: {
-        mode: TitanMode.THEMIS,
-        model: 'openai/gpt-5.2',
+    try {
+      const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
+      const response = await this.provider.complete({
+        messages: [
+          { role: 'system', content: THEMIS_SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
         temperature: 0.1,
-        toolRestrictions: ['write', 'edit', 'task', 'delegate_task'],
-      },
-      passed: true,
-      checks: [],
+        maxTokens: 64_000,
+      })
+
+      return {
+        output: response.content,
+        metadata: {
+          mode: TitanMode.THEMIS,
+          model: response.model,
+          usage: response.usage,
+        },
+        passed: true,
+        checks: [],
+      }
+    } catch (err: unknown) {
+      const error = err as Error
+      return {
+        output: error.message || String(err),
+        metadata: { mode: TitanMode.THEMIS, error: error.name },
+        passed: false,
+        checks: [{ name: 'llm', passed: false, detail: error.message || String(err) }],
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { TitanMode } from '../modes/types.js'
 import { TitanAdapter, TitanInput, TitanOutput } from './types.js'
+import { OpenAIProvider } from '../providers/OpenAIProvider.js'
 
 const HERACLES_EXECUTOR_MESSAGE = `<ultrawork-mode>
 
@@ -28,19 +29,53 @@ THE USER ASKED FOR X. DELIVER EXACTLY X. NOT A SUBSET. NOT A DEMO. NOT A STARTIN
 
 </ultrawork-mode>`
 
+export interface HeraclesAdapterOptions {
+  apiKey: string
+  model?: string
+}
+
 export class HeraclesAdapter implements TitanAdapter {
   name = 'Heracles'
   mode = TitanMode.HERACLES
+  private provider: OpenAIProvider
+
+  constructor(options: HeraclesAdapterOptions) {
+    this.provider = new OpenAIProvider({
+      apiKey: options.apiKey,
+      defaultModel: options.model ?? 'gpt-4o-mini',
+    })
+  }
 
   async execute(input: TitanInput): Promise<TitanOutput> {
-    const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
-    return {
-      output: `${HERACLES_EXECUTOR_MESSAGE}\n\n## Objective\n\n${prompt}`,
-      metadata: {
-        mode: TitanMode.HERACLES,
-      },
-      passed: true,
-      checks: [],
+    try {
+      const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
+      const response = await this.provider.complete({
+        messages: [
+          { role: 'system', content: HERACLES_EXECUTOR_MESSAGE },
+          { role: 'user', content: `## Objective\n\n${prompt}` },
+        ],
+        temperature: 0,
+        maxTokens: 64_000,
+      })
+
+      return {
+        output: response.content,
+        metadata: {
+          mode: TitanMode.HERACLES,
+          model: response.model,
+          usage: response.usage,
+        },
+        passed: true,
+        checks: [],
+      }
+    } catch (err: unknown) {
+      const error = err as Error
+      return {
+        output: error.message || String(err),
+        metadata: { mode: TitanMode.HERACLES, error: error.name },
+        passed: false,
+        checks: [{ name: 'llm', passed: false, detail: error.message || String(err) }],
+      }
     }
   }
 }

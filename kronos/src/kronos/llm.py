@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
-import anthropic
+from othrys import BaseLLM, LLMConfig
+
+
+DEFAULT_MODEL = "claude-sonnet-4-5"
 
 
 class KronosLLM:
-    def __init__(self, model: str = "claude-sonnet-4-5", api_key: str | None = None) -> None:
-        self.model = model
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        if not self.api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY not set for Kronos semantic routing.")
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+    def __init__(self, model: str = DEFAULT_MODEL, api_key: str | None = None) -> None:
+        self.base = BaseLLM(LLMConfig(model=model, api_key=api_key))
 
     def classify_intent(self, message: str, titan_registry: dict[str, Any]) -> str:
-        """Classify the user intent into one of the registered Titan modes."""
         descriptions = "\n".join([
             f"- {key}: {info.description} (Capabilities: {', '.join(info.capabilities)})"
             for key, info in titan_registry.items()
@@ -39,19 +36,11 @@ ROUTING RULES:
 Response Format:
 Return ONLY the key of the titan (e.g., 'coeus', 'talos', etc.). No preamble, no explanation."""
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=10,
+        response = self.base.call(
             system=system_prompt,
             messages=[{"role": "user", "content": message}],
-            temperature=0.0,
+            max_tokens=10,
         )
-        parts = [b.text for b in response.content if b.type == "text"]
-        intent = "".join(parts).strip().lower()
+        intent = response.strip().lower()
 
-        # Validation
-        if intent in titan_registry:
-            return intent
-
-        # Fallback to keyword or default
-        return "talos"
+        return intent if intent in titan_registry else "talos"

@@ -49,17 +49,11 @@ export interface TitanConfig {
   systemPrompt: string
 
   /**
-   * Canonical tool policy fields.
-   */
-  allowedTools: string[]
-  blockedTools: string[]
-  writablePaths: string[]
-
-  /**
-   * Backward-compatible aliases for existing workflow/tool-guard code.
+   * Tool permission policy.
    */
   toolAccess: string[]
   toolBlocked: string[]
+  writablePaths: string[]
 
   requiresPlan: boolean
   requiresVerification: boolean

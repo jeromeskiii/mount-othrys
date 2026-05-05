@@ -174,13 +174,14 @@ program
 
 function buildAdapters(config: ReturnType<typeof loadConfig>, venvs: Record<string, string>): Map<string, TitanAdapter> {
   const adapters = new Map<string, TitanAdapter>()
+  const defaultApiKey = config.apiKeys['default'] ?? process.env.OPENAI_API_KEY ?? ''
 
-  for (const [key, titan] of Object.entries(TITAN_REGISTRY)) {
+  for (const [, titan] of Object.entries(TITAN_REGISTRY)) {
     if (titan.adapterType === 'native' && titan.mode === TitanMode.THEMIS) {
-      adapters.set(titan.mode, new ThemisAdapter())
+      adapters.set(titan.mode, new ThemisAdapter({ apiKey: defaultApiKey, model: titan.model }))
     } else if (titan.adapterType === 'native' && titan.mode === TitanMode.HERACLES) {
-      adapters.set(titan.mode, new HeraclesAdapter())
-    } else {
+      adapters.set(titan.mode, new HeraclesAdapter({ apiKey: defaultApiKey }))
+    } else if (titan.adapterType === 'python') {
       adapters.set(titan.mode, new PythonTitanAdapter(titan, config.rootDir, venvs, config.apiKeys))
     }
   }

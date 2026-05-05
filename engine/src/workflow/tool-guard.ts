@@ -1,16 +1,15 @@
+import { resolve as resolvePath, isAbsolute } from 'node:path'
 import { VerificationCheck } from '../modes/types.js'
 import { TITAN_REGISTRY } from '../modes/registry.js'
 
 const BLOCKED_COMMANDS = [
-  'rm -rf /',
-  'rm -rf ~',
-  'mkfs',
-  'dd if=',
-  ':(){:|:&};:',
-  'git push --force',
-  'git reset --hard',
-  'DROP TABLE',
-  'DROP DATABASE',
+  /^rm\s+.*?-rf?\s+\/\s*$/i,
+  /mkfs/i,
+  /dd\s+if=/i,
+  /:\{\(\):\s*\|:&\};:/i,
+  /git\s+push\s+--force(?!-)/i,
+  /git\s+reset\s+--hard/i,
+  /DROP\s+(TABLE|DATABASE)/i,
 ]
 
 const BLOCKED_PATH_PATTERNS = [
@@ -41,10 +40,10 @@ export function guardCommand(command: string): GuardResult {
   let blocked = false
   let blockedReason: string | undefined
 
-  for (const blocked_cmd of BLOCKED_COMMANDS) {
-    if (command.toLowerCase().includes(blocked_cmd.toLowerCase())) {
+  for (const pattern of BLOCKED_COMMANDS) {
+    if (pattern.test(command)) {
       blocked = true
-      blockedReason = `Blocked command pattern: ${blocked_cmd}`
+      blockedReason = `Blocked command pattern: ${pattern}`
       checks.push({ name: 'command-safety', passed: false, detail: blockedReason })
       break
     }
@@ -59,7 +58,7 @@ export function guardCommand(command: string): GuardResult {
 
 export function guardFilePath(filePath: string, workdir: string): GuardResult {
   const checks: GuardCheck[] = []
-  const resolved = filePath.startsWith('/') ? filePath : `${workdir}/${filePath}`
+  const resolved = resolvePath(isAbsolute(filePath) ? filePath : `${workdir}/${filePath}`)
 
   for (const pattern of BLOCKED_PATH_PATTERNS) {
     if (resolved.startsWith(pattern) || resolved.includes(pattern)) {
@@ -68,8 +67,9 @@ export function guardFilePath(filePath: string, workdir: string): GuardResult {
     }
   }
 
-  if (!resolved.startsWith(workdir)) {
-    checks.push({ name: 'path-safety', passed: false, detail: `Path outside workdir: ${resolved} (workdir: ${workdir})` })
+  const resolvedWorkdir = resolvePath(workdir)
+  if (!resolved.startsWith(resolvedWorkdir + '/') && resolved !== resolvedWorkdir) {
+    checks.push({ name: 'path-safety', passed: false, detail: `Path outside workdir: ${resolved} (workdir: ${resolvedWorkdir})` })
     return { allowed: false, checks, blockedReason: `Write blocked: path outside workdir` }
   }
 
@@ -86,8 +86,8 @@ export function guardScope(mode: string, action: string): GuardResult {
     return { allowed: false, checks, blockedReason: `Unknown mode: ${mode}` }
   }
 
-  const blockedTools = [...config.toolBlocked, ...config.blockedTools]
-  const allowedTools = [...config.toolAccess, ...config.allowedTools]
+  const blockedTools = [...config.toolBlocked]
+  const allowedTools = [...config.toolAccess]
 
   if (blockedTools.includes('*')) {
     checks.push({ name: 'scope-safety', passed: false, detail: `Mode ${mode} has all tools blocked` })
