@@ -1,6 +1,8 @@
 import { TitanMode } from '../modes/types.js'
 import { TitanAdapter, TitanInput, TitanOutput } from './types.js'
 import { OpenAIProvider } from '../providers/OpenAIProvider.js'
+import type { LLMProvider } from '../providers/LLMProvider.js'
+import { resolveSystemPrompt } from './engineContext.js'
 
 const HERACLES_EXECUTOR_MESSAGE = `<ultrawork-mode>
 
@@ -32,18 +34,25 @@ THE USER ASKED FOR X. DELIVER EXACTLY X. NOT A SUBSET. NOT A DEMO. NOT A STARTIN
 export interface HeraclesAdapterOptions {
   apiKey: string
   model?: string
+  /**
+   * Injection seam for tests. Defaults to an OpenAI-backed provider; supplying
+   * one keeps the adapter's request shape assertable without network access.
+   */
+  provider?: LLMProvider
 }
 
 export class HeraclesAdapter implements TitanAdapter {
   name = 'Heracles'
   mode = TitanMode.HERACLES
-  private provider: OpenAIProvider
+  private provider: LLMProvider
 
   constructor(options: HeraclesAdapterOptions) {
-    this.provider = new OpenAIProvider({
-      apiKey: options.apiKey,
-      defaultModel: options.model ?? 'gpt-4o-mini',
-    })
+    this.provider =
+      options.provider ??
+      new OpenAIProvider({
+        apiKey: options.apiKey,
+        defaultModel: options.model ?? 'gpt-4o-mini',
+      })
   }
 
   async execute(input: TitanInput): Promise<TitanOutput> {
@@ -51,7 +60,7 @@ export class HeraclesAdapter implements TitanAdapter {
       const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
       const response = await this.provider.complete({
         messages: [
-          { role: 'system', content: HERACLES_EXECUTOR_MESSAGE },
+          { role: 'system', content: resolveSystemPrompt(HERACLES_EXECUTOR_MESSAGE, input.context) },
           { role: 'user', content: `## Objective\n\n${prompt}` },
         ],
         temperature: 0,

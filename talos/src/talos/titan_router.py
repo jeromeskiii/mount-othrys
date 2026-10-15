@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from othrys import match_rule
+
 TITAN_COEUS = "coeus"
 TITAN_ATLAS = "atlas"
 TITAN_IAPETUS = "iapetus"
@@ -21,49 +23,46 @@ class RouteResult:
     extra_args: list[str] = field(default_factory=list)
 
 
+#: Canonical table Titan -> (worker, action, reason) Talos delegates to.
+DELEGATIONS: dict[str, tuple[str, str, str]] = {
+    TITAN_COEUS: (TITAN_COEUS, "spawn_coeus", "Planning request detected"),
+    TITAN_ATLAS: (TITAN_ATLAS, "spawn_atlas", "Atlas execution request detected"),
+    TITAN_IAPETUS: (TITAN_IAPETUS, "spawn_iapetus", "Deep execution request detected"),
+}
+
+#: Default subcommand per delegated worker.
+DELEGATION_SUBCOMMANDS: dict[str, str] = {
+    TITAN_COEUS: "interview",
+    TITAN_ATLAS: "run",
+    TITAN_IAPETUS: "execute",
+}
+
+
 def route_request(message: str, session_id: str | None = None) -> RouteResult:
-    msg_lower = message.lower()
-    words = message.split()
+    """Decide whether Talos handles a request itself or delegates it.
 
-    if any(kw in msg_lower for kw in ["plan this", "create a plan", "make a plan", "build a plan",
-                                        "help me think", "what should we", "scope this",
-                                        "spec for", "define the approach"]):
+    MF-2: the keyword lists that used to live here were a third routing table,
+    disagreeing with both the engine's triggers and Kronos's ``ROUTING_RULES``.
+    This now reads the canonical table via ``othrys.routing`` and maps the
+    resolved Titan into Talos's own actions.
+    """
+    found = match_rule(message)
+
+    if found is not None and found.titan in DELEGATIONS:
+        worker, action, reason = DELEGATIONS[found.titan]
         return RouteResult(
-            titan=TITAN_COEUS,
-            action="spawn_coeus",
-            reason="Planning request detected",
-            subcommand="interview",
+            titan=worker,
+            action=action,
+            reason=reason,
+            subcommand=DELEGATION_SUBCOMMANDS[found.titan],
         )
 
-    if any(kw in msg_lower for kw in ["run the plan", "execute the plan", "atlas", "run atlas",
-                                        "start the boulder", "continue the boulder",
-                                        "boulder", "sequential execution", "plan-driven"]):
+    if found is not None and found.titan == "talos":
         return RouteResult(
-            titan=TITAN_ATLAS,
-            action="spawn_atlas",
-            reason="Atlas execution request detected",
-            subcommand="run",
+            titan=TITAN_DIRECT,
+            action="execute_direct",
+            reason="Implementation request — direct execution",
         )
-
-    if any(kw in msg_lower for kw in ["deep ", "iapetus", "deeply analyze", "complex refactor",
-                                        "multi-file", "architectural", "deep execution",
-                                        "think deeply", "thorough analysis"]):
-        return RouteResult(
-            titan=TITAN_IAPETUS,
-            action="spawn_iapetus",
-            reason="Deep execution request detected",
-            subcommand="execute",
-        )
-
-    if any(kw in msg_lower for kw in ["implement", "add the", "build the", "create the",
-                                        "fix the", "change the", "edit the", "write the"]):
-        first_word = words[0].lower() if words else ""
-        if first_word in ("implement", "add", "build", "create", "fix", "change", "edit", "write"):
-            return RouteResult(
-                titan=TITAN_DIRECT,
-                action="execute_direct",
-                reason="Implementation request — direct execution",
-            )
 
     return RouteResult(
         titan=TITAN_DIRECT,

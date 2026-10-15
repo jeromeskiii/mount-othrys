@@ -8,6 +8,7 @@ from typing import Any, Callable, cast
 import anthropic
 
 from .config import DEFAULT_TIMEOUT, load_env
+from .context import load_context
 from .types import AgentRunResult, LLMConfig, ToolCallRecord
 
 # Adaptive thinking ({"type": "adaptive"}) is only supported on Claude 4.6
@@ -35,7 +36,12 @@ def _model_version(model: str) -> tuple[int, int] | None:
 
 class BaseLLM:
     def __init__(self, config: LLMConfig | None = None, timeout: int = DEFAULT_TIMEOUT) -> None:
-        self.config = config or LLMConfig()
+        # MF-1: every Python Titan builds its client here, so this is the single
+        # place the engine's context envelope is honoured. A Titan invoked
+        # directly from a shell receives no envelope, leaving its own defaults
+        # and prompts exactly as they were before.
+        self.context = load_context()
+        self.config = self.context.apply_to(config or LLMConfig())
         api_key = self.config.api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             load_env()
@@ -58,7 +64,16 @@ class BaseLLM:
         return {"type": "enabled", "budget_tokens": max(budget, _MIN_THINKING_BUDGET)}
 
     def _system_block(self, system: str) -> list[dict]:
-        return [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+        # MF-1: the engine's routed mode identity is prepended to the worker's
+        # own system prompt rather than replacing it, so engine metadata is
+        # honoured without discarding the Titan personas.
+        return [
+            {
+                "type": "text",
+                "text": self.context.compose_system_prompt(system),
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
 
     def call(self, system: str, messages: list[dict], max_tokens: int | None = None) -> str:
         effective_max = max_tokens or self.config.max_tokens

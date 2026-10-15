@@ -116,16 +116,31 @@ Mount Othrys operates as the **supreme command citadel** that:
 
 ### Request Routing
 
-| Request Type                  | Titan Activated          |
+Routing is data, not code. The canonical table is
+[`othrys/src/othrys/routing.table.json`](othrys/src/othrys/routing.table.json); the engine
+registers triggers from it (`engine/src/routing/table.ts`), and `othrys.routing` serves the
+same rules to the Python Titans. Add or change an intent **only** in that file.
+
+Precedence: every entry whose pattern matches scores its own `weight`; the **highest weight
+wins** and ties resolve to the earliest table entry. Nothing matched falls through to Talos.
+Weights exist so a specific intent always outranks a generic one — the generic Talos
+`/implement/` rule (weight 10) can no longer shadow Iapetus's "implement this complex work"
+(weight 60).
+
+| Request                       | Titan Activated          |
 |-------------------------------|--------------------------|
 | "Plan this feature"           | Coeus                    |
-| "Consult on architecture"    | Themis                   |
+| "Consult on architecture"     | Themis                   |
 | "Complete this todo list"     | Atlas                    |
 | "Implement this complex work" | Iapetus                  |
 | "Do this task"                | Talos                    |
 | "FINISH THIS NOW"             | Heracles                 |
-| "Complex multi-disciplinary"   | Coordinator              |
-| Unsure                        | Kronos (auto-route)      |
+| "Complex multi-disciplinary"  | Coordinator              |
+| "Unsure"                      | Talos (default)          |
+
+Every row above is asserted by `engine/tests/routingTable.test.ts`, which parses this table
+out of the README and fails if the documentation and the router ever disagree. The identical
+golden corpus is re-run against the Python matcher in `othrys/tests/test_routing.py`.
 
 ## Core Principles of Mount Othrys
 
@@ -194,3 +209,7 @@ make check
 # Or directly run the verification script
 ./check-all.sh
 ```
+
+The medium-severity remediation of this repository (engine context propagation and the
+single canonical routing table) is documented with its evidence and remaining risks in
+[`docs/REMEDIATION.md`](docs/REMEDIATION.md).

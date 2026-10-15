@@ -1,6 +1,8 @@
 import { TitanMode } from '../modes/types.js'
 import { TitanAdapter, TitanInput, TitanOutput } from './types.js'
 import { OpenAIProvider } from '../providers/OpenAIProvider.js'
+import type { LLMProvider } from '../providers/LLMProvider.js'
+import { resolveSystemPrompt } from './engineContext.js'
 
 const THEMIS_SYSTEM_PROMPT = `You are Themis — Strategic Technical Advisor.
 
@@ -23,18 +25,25 @@ not exhaustive analysis.
 export interface ThemisAdapterOptions {
   apiKey: string
   model?: string
+  /**
+   * Injection seam for tests. Defaults to an OpenAI-backed provider; supplying
+   * one keeps the adapter's request shape assertable without network access.
+   */
+  provider?: LLMProvider
 }
 
 export class ThemisAdapter implements TitanAdapter {
   name = 'Themis'
   mode = TitanMode.THEMIS
-  private provider: OpenAIProvider
+  private provider: LLMProvider
 
   constructor(options: ThemisAdapterOptions) {
-    this.provider = new OpenAIProvider({
-      apiKey: options.apiKey,
-      defaultModel: options.model ?? 'gpt-4o',
-    })
+    this.provider =
+      options.provider ??
+      new OpenAIProvider({
+        apiKey: options.apiKey,
+        defaultModel: options.model ?? 'gpt-4o',
+      })
   }
 
   async execute(input: TitanInput): Promise<TitanOutput> {
@@ -42,7 +51,7 @@ export class ThemisAdapter implements TitanAdapter {
       const prompt = typeof input.prompt === 'string' ? input.prompt : String(input.prompt)
       const response = await this.provider.complete({
         messages: [
-          { role: 'system', content: THEMIS_SYSTEM_PROMPT },
+          { role: 'system', content: resolveSystemPrompt(THEMIS_SYSTEM_PROMPT, input.context) },
           { role: 'user', content: prompt },
         ],
         temperature: 0.1,
