@@ -156,38 +156,63 @@ system prompt   : 'ENGINE DIRECTIVE\n\n---\n\nWORKER PROMPT'   (envelope present
 system prompt   : 'WORKER PROMPT'                               (no envelope — unchanged)
 ```
 
-### CI assessment (not green — pre-existing)
+### CI assessment (python-titans matrix red — pre-existing)
 
-`.github/workflows/ci.yml` was assessed against its own job definitions:
+Observed on PR #1 (run `38678418351`, head `a3272b1`):
 
-| Job | Expected outcome |
-|---|---|
-| `typescript-packages` (engine, themis, heracles) | **Green** — typecheck, 63 tests and build all pass |
-| `python-othrys` | **Green** — mypy clean, tests pass |
-| `python-titans` matrix — `atlas`, `coeus` | **Green** |
-| `python-titans` matrix — `iapetus`, `talos`, `kronos` | **Red — pre-existing** |
+| Job | Observed | Cause |
+|---|---|---|
+| `TypeScript (engine)` | **success** | — |
+| `TypeScript (themis)` | **success** | — |
+| `TypeScript (heracles)` | **success** | — |
+| `Python (othrys core)` | **success** | includes the two new MF-1/MF-2 modules |
+| `Python Titans (atlas)` | failure | `mypy: command not found` (exit 127) |
+| `Python Titans (coeus)` | failure | `mypy: command not found` (exit 127) |
+| `Python Titans (iapetus)` | failure | strict-mypy errors in `cli.py` |
+| `Python Titans (talos)` | failure | strict-mypy errors in `cli.py` |
+| `Python Titans (kronos)` | failure | strict-mypy errors in `cli.py`, `config.py` |
 
-The three red jobs run `mypy src` with `working-directory: <titan>`, which picks up each
-`pyproject.toml`'s `[tool.mypy] strict = true`; the unannotated `cli.py`/`storage.py` files fail
-under strict mode. This is **not** caused by this change — the same command against the parent
-commit `a265e41` in a disposable worktree reproduces identical counts:
+Both classes of failure predate this change and are **unrelated** to it:
 
-| Package | Errors at `a265e41` (baseline) | Errors after MF-1/MF-2 | Delta |
+1. **`atlas` and `coeus` never install mypy.** The workflow's install step is
+   `pip install -e ".[dev]" || (pip install -e . && pip install mypy pytest)`. `atlas` declares no
+   `[project.optional-dependencies]` at all, and `coeus`'s `dev` extra is `["pytest>=8.0"]`. In both
+   cases pip exits 0, the `||` fallback never runs, and the next step is
+   `/…/temp/…sh: line 1: mypy: command not found` → exit 127.
+2. **`iapetus`, `talos` and `kronos` run strict mypy over unannotated files.** Each
+   `pyproject.toml` sets `[tool.mypy] strict = true` and CI runs `mypy src` from the package
+   directory. `cli.py` (untyped argparse handlers) and `kronos/storage.py`, `kronos/config.py`
+   fail under strict mode.
+
+Neither class is touched by this remediation. Evidence, in addition to the file lists above:
+
+| Package | Strict-mypy errors at `a265e41` (baseline worktree) | Errors after MF-1/MF-2 | Delta |
 |---|---|---|---|
 | `kronos` | 7 in 2 files | 7 in 2 files | **0** |
 | `talos` | 11 in 3 files | 11 in 3 files | **0** |
 | `iapetus` | 11 in 2 files | 11 in 2 files | **0** |
 
 Neither `kronos/src/kronos/router.py` nor `talos/src/talos/titan_router.py` — the only files this
-remediation edited in those packages — appears in either run's error output.
+remediation edited in those packages — appears in either run's error output. `atlas`, `coeus` and
+their manifests are untouched by this change.
+
+`main` is not protected, so no check is *required* to merge. The `python-titans` matrix has been red
+since before this branch: `main`'s only CI run (`25420395652`, 2026-05-06) failed **all six** of its
+jobs, including the TypeScript engine — consistent with `main` at `add1070` being unable to build at
+all (see the baseline commit). Measured against that starting state this branch moves four jobs from
+red to green (three TypeScript packages plus `python-othrys`) and changes nothing about the five
+Python-Titan jobs, whose failures are rooted in their own manifests and unannotated CLIs.
 
 ---
 
 ## Remaining risks
 
-1. **CI `python-titans` is red for `iapetus`, `talos`, `kronos`** — pre-existing and unrelated to
-   this change, but it means CI cannot go green on this branch. Either annotate those CLIs or scope
-   each `[tool.mypy]` to the modules that are already typed.
+1. **CI's `python-titans` matrix is red for all five Python Titans** — pre-existing and unrelated to
+   this change, but it means CI cannot go fully green on this branch. Two causes: `atlas`/`coeus`
+   never install `mypy` (their `dev` extras omit it, so the workflow's `||` fallback is unreachable),
+   and `iapetus`/`talos`/`kronos` run strict mypy over unannotated `cli.py`/`storage.py`/`config.py`.
+   Fix by adding `mypy` to the `dev` extras and either annotating those CLIs or scoping each
+   `[tool.mypy]` to the modules that are already typed.
 2. **Tool permissions remain declarative (P1-1).** `guardScope()` in
    `engine/src/workflow/tool-guard.ts` is never called, and Atlas's declared read-only policy is not
    enforced on its subagents. The README's "Tool Access by Titan" table is still aspirational.
