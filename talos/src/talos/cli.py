@@ -8,10 +8,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from othrys import LLMConfig
+
 from . import __version__
 from .classifier import classify, RequestType
 from .delegation import build_delegation_prompt
-from .llm import TalosLLM, LLMConfig
+from .llm import TalosLLM
 from .orchestrator import TalosOrchestrator, Todo, TodoStatus
 from .prompts import (
     TALOS_IDENTITY,
@@ -33,7 +35,7 @@ from .titan_router import (
 from .tools import make_dispatcher, tool_specs
 
 
-def _print(obj, *, as_json: bool = False) -> None:
+def _print(obj: object, *, as_json: bool = False) -> None:
     if as_json:
         print(json.dumps(obj, indent=2, default=str))
     else:
@@ -58,7 +60,7 @@ def _session_todos_to_runtime(todos: list[dict[str, Any]]) -> list[Todo]:
     return runtime
 
 
-def _llm(args) -> TalosLLM:
+def _llm(args: argparse.Namespace) -> TalosLLM:
     return TalosLLM(
         LLMConfig(
             model=args.model,
@@ -69,7 +71,7 @@ def _llm(args) -> TalosLLM:
     )
 
 
-def _workdir(args) -> Path:
+def _workdir(args: argparse.Namespace) -> Path:
     return Path(args.workdir or args.root or ".").resolve()
 
 
@@ -84,7 +86,7 @@ def _emit(event: str, payload: dict[str, Any]) -> None:
         print(f"  ✓ {payload['id']}: {payload['content'][:60]}", flush=True)
 
 
-def cmd_session(args) -> None:
+def cmd_session(args: argparse.Namespace) -> None:
     if args.sub == "new":
         s = create_session()
         _print({"session": s.session_id, "created": s.created_at}, as_json=args.json)
@@ -114,7 +116,7 @@ def cmd_session(args) -> None:
         )
 
 
-def cmd_ask(args) -> None:
+def cmd_ask(args: argparse.Namespace) -> None:
     workdir = _workdir(args)
     session = None
     if args.session:
@@ -236,7 +238,7 @@ def cmd_ask(args) -> None:
         )
 
 
-def cmd_todos(args) -> None:
+def cmd_todos(args: argparse.Namespace) -> None:
     workdir = _workdir(args)
     orch = TalosOrchestrator(workdir)
     session = None

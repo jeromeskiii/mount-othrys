@@ -29,7 +29,7 @@ def _get_llm(config: KronosConfig) -> KronosLLM | None:
         return None
 
 
-def _print(obj, *, as_json: bool) -> None:
+def _print(obj: object, *, as_json: bool) -> None:
     if as_json:
         print(json.dumps(obj, indent=2, default=str))
     else:
@@ -90,7 +90,7 @@ def _run_command(command: str, args: list[str], workdir: str = ".") -> int:
         return 124
 
 
-def cmd_route(args) -> None:
+def cmd_route(args: argparse.Namespace) -> None:
     config = load_config(Path(args.config_file) if hasattr(args, "config_file") and args.config_file else None)
     llm = _get_llm(config)
     message = args.message
@@ -122,7 +122,7 @@ def cmd_route(args) -> None:
         sys.exit(code)
 
 
-def cmd_titan(args) -> None:
+def cmd_titan(args: argparse.Namespace) -> None:
     if args.list:
         titans = list_titans()
         if args.json:
@@ -173,7 +173,7 @@ def cmd_titan(args) -> None:
         print(f"Max tokens: {titan.max_tokens}")
 
 
-def cmd_ask(args) -> None:
+def cmd_ask(args: argparse.Namespace) -> None:
     config = load_config(Path(args.config_file) if hasattr(args, "config_file") and args.config_file else None)
     llm = _get_llm(config)
     titan, reason = route(args.message, llm=llm)
@@ -206,7 +206,7 @@ def cmd_ask(args) -> None:
     sys.exit(code)
 
 
-def cmd_config(args) -> None:
+def cmd_config(args: argparse.Namespace) -> None:
     config_path = Path(args.config_file) if hasattr(args, "config_file") and args.config_file else None
     config = load_config(config_path)
 
@@ -250,7 +250,7 @@ def cmd_config(args) -> None:
             print(f"  Titan Overrides: {config.titan_overrides}")
 
 
-def cmd_campaigns(args) -> None:
+def cmd_campaigns(args: argparse.Namespace) -> None:
     store = _get_store()
     if args.id:
         ctx = store.get_campaign_context(args.id)

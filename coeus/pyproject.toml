@@ -14,7 +14,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+# mypy must be here: CI's typecheck step runs `mypy src` after
+# `pip install -e ".[dev]"`, and a dev extra without mypy makes that step fail
+# with `command not found` instead of a type error. types-PyYAML covers the yaml
+# import in coeus/state.py.
+dev = ["pytest>=8.0", "mypy", "types-PyYAML"]
 
 [project.scripts]
 coeus = "coeus.cli:main"

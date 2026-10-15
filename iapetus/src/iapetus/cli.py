@@ -7,23 +7,25 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from othrys import LLMConfig
+
 from . import __version__
 from .boulder_bridge import load_boulder_from_atlas, to_objective, find_blocked_tasks, find_next_pending
 from .executor import DeepExecutor, DeepResult
-from .llm import DeepLLM, LLMConfig
+from .llm import DeepLLM
 
 
 DEFAULT_MODEL = "claude-opus-4-5"
 
 
-def _print(obj, *, as_json: bool) -> None:
+def _print(obj: object, *, as_json: bool) -> None:
     if as_json:
         print(json.dumps(obj, indent=2, default=str))
     else:
         print(obj)
 
 
-def _llm(args) -> DeepLLM:
+def _llm(args: argparse.Namespace) -> DeepLLM:
     return DeepLLM(
         LLMConfig(
             model=args.model,
@@ -34,7 +36,7 @@ def _llm(args) -> DeepLLM:
     )
 
 
-def _extract_risk_summary(text: str) -> dict:
+def _extract_risk_summary(text: str) -> dict[str, Any]:
     """Extract structured risk summary from Iapetus output."""
     risks = []
     severity_pattern = re.compile(r'\|\s*(.+?)\s*\|\s*(Critical|High|Medium|Low)\s*\|\s*(High|Medium|Low)\s*\|\s*(.+?)\s*\|')
@@ -52,7 +54,7 @@ def _extract_risk_summary(text: str) -> dict:
     return {"risks": risks, "summary": summary}
 
 
-def _extract_assessment(text: str) -> dict:
+def _extract_assessment(text: str) -> dict[str, Any]:
     """Extract assessment verdict from Iapetus output."""
     verdict = "NEEDS_REVISION"
     if "APPROVE_WITH_RISKS" in text.upper():
@@ -64,7 +66,7 @@ def _extract_assessment(text: str) -> dict:
     return {"verdict": verdict, "analysis": text}
 
 
-def _extract_stress_result(text: str) -> dict:
+def _extract_stress_result(text: str) -> dict[str, Any]:
     """Extract stress test result from Iapetus output."""
     result = "PASS_WITH_CONCERNS"
     if "STRESS_RESULT: PASS" in text.upper() and "CONCERN" not in text.upper():
@@ -74,7 +76,7 @@ def _extract_stress_result(text: str) -> dict:
     return {"result": result, "analysis": text}
 
 
-def cmd_analyze(args) -> None:
+def cmd_analyze(args: argparse.Namespace) -> None:
     llm = _llm(args)
     workdir = Path(args.workdir or args.root).resolve()
     findings = []
@@ -133,7 +135,7 @@ def cmd_analyze(args) -> None:
             print(f"\nSaved to {args.out}")
 
 
-def cmd_assess(args) -> None:
+def cmd_assess(args: argparse.Namespace) -> None:
     llm = _llm(args)
     workdir = Path(args.workdir or args.root).resolve()
 
@@ -172,7 +174,7 @@ def cmd_assess(args) -> None:
         print(f"\nVerdict: {result['verdict']}")
 
 
-def cmd_stress_test(args) -> None:
+def cmd_stress_test(args: argparse.Namespace) -> None:
     llm = _llm(args)
     workdir = Path(args.workdir or args.root).resolve()
     findings = []
@@ -223,7 +225,7 @@ def cmd_stress_test(args) -> None:
         print(f"\nResult: {result['result']}")
 
 
-def cmd_execute(args) -> None:
+def cmd_execute(args: argparse.Namespace) -> None:
     """Legacy: deep execution mode (preserved for backward compatibility)."""
     llm = _llm(args)
     workdir = Path(args.workdir or args.root).resolve()

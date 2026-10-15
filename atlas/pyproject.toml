@@ -14,5 +14,12 @@ dependencies = [
 [project.scripts]
 atlas = "atlas.cli:main"
 
+[project.optional-dependencies]
+# CI's "python-titans" job installs `pip install -e ".[dev]"`. Without a dev
+# extra that includes mypy, pip exits 0, the workflow's `||` fallback never
+# runs, and the typecheck step dies with `mypy: command not found` (exit 127).
+# types-PyYAML is needed because atlas/boulder.py imports yaml under mypy.
+dev = ["pytest", "mypy", "types-PyYAML"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/atlas"]
