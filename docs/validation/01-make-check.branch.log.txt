@@ -1,0 +1,73 @@
+# Evidence: `make check` + per-package strict mypy on branch fix/ci-guardrail-and-engine-portability
+# Captured: 2026-10-14 21:10 local | Command: make check | Result: exit 0
+
+cd engine && npx tsc --noEmit
+cd themis && npx tsc --noEmit
+cd heracles && npx tsc --noEmit
+PYTHONPATH=othrys/src:atlas/src:coeus/src:iapetus/src:talos/src:kronos/src python3 -m mypy othrys/src atlas/src coeus/src iapetus/src talos/src kronos/src
+Success: no issues found in 54 source files
+  mypy (strict) atlas
+Success: no issues found in 11 source files
+  mypy (strict) coeus
+Success: no issues found in 7 source files
+  mypy (strict) iapetus
+Success: no issues found in 8 source files
+  mypy (strict) talos
+Success: no issues found in 11 source files
+  mypy (strict) kronos
+Success: no issues found in 9 source files
+cd engine && npm test -- --run
+
+> @mount-othrys/engine@0.1.0 test
+> vitest --run
+
+
+ RUN  v3.2.4 /Users/ohmskiii/mount-othrys/engine
+
+ ✓ tests/toolGuard.test.ts (10 tests) 2ms
+ ✓ tests/router.test.ts (6 tests) 2ms
+ ✓ tests/routingTable.test.ts (9 tests) 4ms
+ ✓ tests/routingTablePackaging.test.ts (4 tests) 35ms
+ ✓ tests/engine.test.ts (3 tests) 3ms
+ ✓ tests/contextPropagation.test.ts (10 tests) 77ms
+
+ Test Files  6 passed (6)
+      Tests  42 passed (42)
+   Start at  21:10:43
+   Duration  323ms (transform 184ms, setup 0ms, collect 386ms, tests 123ms, environment 0ms, prepare 220ms)
+
+cd themis && npm test -- --run
+
+> @mount-othrys/themis@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/themis
+
+ ✓ src/index.test.ts (15 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  21:10:44
+   Duration  175ms (transform 22ms, setup 0ms, collect 20ms, tests 2ms, environment 0ms, prepare 39ms)
+
+cd heracles && npm test -- --run
+
+> @mount-othrys/heracles@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/heracles
+
+ ✓ src/heracles/index.test.ts (10 tests) 1ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  21:10:44
+   Duration  173ms (transform 20ms, setup 0ms, collect 17ms, tests 1ms, environment 0ms, prepare 40ms)
+
+PYTHONPATH=othrys/src:atlas/src:coeus/src:iapetus/src:talos/src:kronos/src python3 -m pytest -q othrys/tests atlas/tests coeus/tests iapetus/tests talos/tests kronos/tests
+........................................................................ [ 67%]
+..................................                                       [100%]
+106 passed in 0.51s
+EXIT=0

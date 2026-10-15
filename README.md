@@ -211,6 +211,8 @@ make check
 ```
 
 The remediations of this repository are documented with their evidence and remaining risks in
-[`docs/REMEDIATION.md`](docs/REMEDIATION.md) (engine context propagation, single canonical routing
-table) and [`docs/CI-GUARDRAIL.md`](docs/CI-GUARDRAIL.md) (CI pipeline repair, honest local gate,
-engine portability).
+[`docs/REMEDIATION-REPORT.md`](docs/REMEDIATION-REPORT.md) — the consolidated final report covering
+both the Medium-severity findings (engine context propagation, single canonical routing table) and the
+follow-on findings, with per-finding impact, root cause and verification. Supporting detail lives in
+[`docs/REMEDIATION.md`](docs/REMEDIATION.md), [`docs/CI-GUARDRAIL.md`](docs/CI-GUARDRAIL.md) and the
+[`docs/validation/`](docs/validation/) evidence archive.

@@ -1,0 +1,75 @@
+# Evidence of the G-2 defect, captured in pass 2 BEFORE the fix.
+# Captured: 2026-10-14 21:04 local | 4 steps only, banner said "Production Verification".
+# This gate exited 0 while 5 of 9 CI jobs were red, because it ran mypy from the repo
+# root and so never loaded each package [tool.mypy] strict = true.
+
+==========================================
+ Mount Othrys: Production Verification 
+==========================================
+
+[1/4] TypeScript Type Checks...
+✓ TypeScript type checking passed!
+
+[2/4] Python Type Checks (mypy)...
+Success: no issues found in 54 source files
+✓ Python type checking passed!
+
+[3/4] TypeScript Tests (vitest)...
+
+> @mount-othrys/engine@0.1.0 test
+> vitest --run
+
+
+ RUN  v3.2.4 /Users/ohmskiii/mount-othrys/engine
+
+ ✓ tests/toolGuard.test.ts (10 tests) 2ms
+ ✓ tests/router.test.ts (6 tests) 2ms
+ ✓ tests/routingTable.test.ts (9 tests) 4ms
+ ✓ tests/engine.test.ts (3 tests) 2ms
+ ✓ tests/contextPropagation.test.ts (10 tests) 95ms
+
+ Test Files  5 passed (5)
+      Tests  38 passed (38)
+   Start at  21:04:18
+   Duration  425ms (transform 166ms, setup 0ms, collect 410ms, tests 105ms, environment 0ms, prepare 257ms)
+
+
+> @mount-othrys/themis@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/themis
+
+ ✓ src/index.test.ts (15 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  21:04:18
+   Duration  178ms (transform 19ms, setup 0ms, collect 17ms, tests 2ms, environment 0ms, prepare 33ms)
+
+
+> @mount-othrys/heracles@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/heracles
+
+ ✓ src/heracles/index.test.ts (10 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  21:04:19
+   Duration  167ms (transform 19ms, setup 0ms, collect 17ms, tests 2ms, environment 0ms, prepare 35ms)
+
+✓ TypeScript tests passed!
+
+[4/4] Python Tests (pytest)...
+........................................................................ [ 67%]
+..................................                                       [100%]
+106 passed in 0.47s
+✓ Python tests passed!
+
+==========================================
+ ALL CHECKS PASSED (Production Ready) ✓
+==========================================
+EXIT=0
