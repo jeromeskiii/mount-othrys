@@ -19,7 +19,7 @@ export const THEMIS_MODE: TitanConfig = {
   writablePaths: [],
   requiresPlan: false,
   requiresVerification: false,
-  model: 'openai/gpt-5.2',
+  model: 'gpt-4o',
   temperature: 0.1,
   thinkingBudget: 32_000,
   maxTokens: 64_000,

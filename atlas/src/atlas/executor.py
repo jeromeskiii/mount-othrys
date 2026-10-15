@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from othrys import AgentRunResult
 from .boulder import Task, Boulder
-from .llm import AtlasLLM, AgentRunResult
+from .llm import AtlasLLM
 from .prompts import SUBAGENT_SYSTEM, build_subagent_prompt
 from .tools import ToolContext, make_dispatcher, tool_specs
 

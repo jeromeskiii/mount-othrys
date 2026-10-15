@@ -40,7 +40,7 @@ Just as Mount Othrys stood as the eternal fortress and base of operations for th
 **Domain:** Holding the entire workflow upon his shoulders until completion.
 You are Atlas of Mount Othrys - the Master Orchestrator.
 You bear the weight of the entire realm - coordinating every agent, task, and verification until victory is secured.
-text- Delegates via `delegate_task()`
+- Delegates via `delegate_task()`
 - Maintains fortress state in `.sisyphus/`
 - Enforces total completion of all objectives
 - Verifies with lsp_diagnostics, builds, and tests
@@ -50,7 +50,7 @@ text- Delegates via `delegate_task()`
 **Domain:** Wisdom and foresight from the heights of Othrys.
 You are Coeus of Mount Othrys — Titan of Intelligence and Cosmic Insight.
 You provide systematic inquiry and masterful planning from the mountain's peak.
-text- Begins with deep consultation and interviewing
+- Begins with deep consultation and interviewing
 - Transitions to concrete plans once clarity is achieved
 - Consults Metis before finalizing strategy
 
@@ -59,7 +59,7 @@ text- Begins with deep consultation and interviewing
 **Domain:** Divine order and prophetic counsel.
 You are Themis of Mount Othrys — Titaness of Divine Law and Prophecy.
 You deliver precise, authoritative recommendations from the sacred mountain.
-text- Read-only strategic advisor
+- Read-only strategic advisor
 - Activated for architecture and complex debugging
 - Structure: Bottom Line → Action Plan → Effort Estimate
 
@@ -68,7 +68,7 @@ text- Read-only strategic advisor
 **Domain:** The creative force that shapes the world.
 You are Iapetus of Mount Othrys — Titan of Creation and Craftsmanship.
 You forge complex solutions from raw possibility.
-text- Handles deep codebase understanding
+- Handles deep codebase understanding
 - Performs large-scale refactoring and implementation
 - Brings foundational, earth-born strength to execution
 
@@ -77,7 +77,7 @@ text- Handles deep codebase understanding
 **Domain:** The tireless bronze guardian of the realm.
 You are Talos of Mount Othrys - the Eternal Guardian.
 You never rest. You roll the boulder, complete the task, and secure the fortress.
-text- Obsessive planning with todos
+- Obsessive planning with todos
 - Smart exploration and delegation
 - Relentless verification
 
@@ -148,9 +148,13 @@ Mount Othrys operates as the **supreme command citadel** that:
 | **Coordinator** | All except write/edit code   | write code, edit code    |
 
 ## File Structure
+```
 mount-othrys/
-├── README.md              # This file - Unified Othrys Doctrine
+├── README.md              # Unified Othrys Doctrine & Guide
+├── Makefile               # Unified build & verification targets
+├── check-all.sh           # End-to-end verification script
 ├── setup.sh               # Unified environment setup
+├── bin/mount-othrys       # Unified CLI entrypoint
 ├── othrys/                # Shared Python library (LLM, tools, config, CLI helpers)
 ├── engine/                # TypeScript Mode Engine + Router
 ├── kronos/                # Supreme orchestrator
@@ -161,3 +165,32 @@ mount-othrys/
 ├── talos/                 # Eternal guardian
 ├── heracles/              # Heroic force
 └── .github/workflows/     # CI pipeline
+```
+
+## Quickstart & Verification
+
+### Setup
+```bash
+./setup.sh
+```
+
+### CLI Usage
+```bash
+# Check system status
+./bin/mount-othrys status
+
+# List available Titans
+./bin/mount-othrys titan --list
+
+# Run a Titan with a goal
+./bin/mount-othrys run --titan talos --prompt "Inspect project structure"
+```
+
+### Quality Assurance & Testing
+```bash
+# Run all tests and type checks across all 9 packages
+make check
+
+# Or directly run the verification script
+./check-all.sh
+```

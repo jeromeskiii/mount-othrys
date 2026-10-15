@@ -1,6 +1,6 @@
 import { resolve as resolvePath, isAbsolute } from 'node:path'
-import { VerificationCheck } from '../modes/types.js'
-import { TITAN_REGISTRY } from '../modes/registry.js'
+import { TitanConfig, VerificationCheck } from '../modes/types.js'
+import { TITAN_REGISTRY, getTitan } from '../modes/registry.js'
 
 const BLOCKED_COMMANDS = [
   /^rm\s+.*?-rf?\s+\/\s*$/i,
@@ -79,9 +79,10 @@ export function guardFilePath(filePath: string, workdir: string): GuardResult {
 
 export function guardScope(mode: string, action: string): GuardResult {
   const checks: GuardCheck[] = []
-  const config = TITAN_REGISTRY[mode]
-
-  if (!config) {
+  let config: TitanConfig | undefined
+  try {
+    config = getTitan(mode)
+  } catch {
     checks.push({ name: 'scope-safety', passed: false, detail: `Unknown mode: ${mode}` })
     return { allowed: false, checks, blockedReason: `Unknown mode: ${mode}` }
   }

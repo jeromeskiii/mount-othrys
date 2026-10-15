@@ -57,7 +57,7 @@ def classify(message: str) -> tuple[RequestType, str]:
     if all(c == 0 for c in counts.values()):
         return RequestType.OPEN_ENDED, "No specific signals — defaulting to open-ended"
 
-    best = max(counts, key=counts.get)
+    best = max(counts, key=lambda k: counts[k])
 
     if explicit_count >= 2 and best not in (RequestType.EXPLICIT, RequestType.TRIVIAL):
         return RequestType.EXPLICIT, "Multiple specific file/line references detected"

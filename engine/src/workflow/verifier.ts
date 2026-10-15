@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { VerificationCheck, VerificationResult } from '../modes/types.js'
 
 const execFileAsync = promisify(execFile)
@@ -51,16 +51,31 @@ export async function runVerifications(options: VerifyOptions): Promise<Verifica
 async function defaultCommands(workdir: string): Promise<Array<{ name: string; command: string; timeout?: number }>> {
   const cmds: Array<{ name: string; command: string; timeout?: number }> = []
 
-  const hasPkg = await fileExists(`${workdir}/package.json`)
-  if (hasPkg) {
-    cmds.push({ name: 'build', command: 'npm run build 2>&1 || bun run build 2>&1' })
-    cmds.push({ name: 'test', command: 'npm test 2>&1 || bun test 2>&1 || vitest run 2>&1' })
-    cmds.push({ name: 'lint', command: 'npm run lint 2>&1 || bun run lint 2>&1 || eslint . 2>&1' })
+  const pkgPath = `${workdir}/package.json`
+  if (await fileExists(pkgPath)) {
+    try {
+      const pkgContent = JSON.parse(await readFile(pkgPath, 'utf8'))
+      const scripts = (pkgContent && typeof pkgContent === 'object' && pkgContent.scripts) || {}
+      if (scripts.build) {
+        cmds.push({ name: 'build', command: 'npm run build 2>&1' })
+      }
+      if (scripts.test) {
+        cmds.push({ name: 'test', command: 'npm test 2>&1' })
+      }
+      if (scripts.lint) {
+        cmds.push({ name: 'lint', command: 'npm run lint 2>&1' })
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
   }
 
   const hasPyproject = await fileExists(`${workdir}/pyproject.toml`)
   if (hasPyproject) {
-    cmds.push({ name: 'python-compile', command: 'python -m py_compile $(find . -name "*.py" -not -path "./.venv/*" -not -path "./node_modules/*" | head -20) 2>&1' })
+    cmds.push({
+      name: 'python-compile',
+      command: '(python3 -m py_compile $(find . -name "*.py" -not -path "./.venv/*" -not -path "./node_modules/*" | head -20) 2>&1) || (python -m py_compile $(find . -name "*.py" -not -path "./.venv/*" -not -path "./node_modules/*" | head -20) 2>&1)',
+    })
   }
 
   return cmds

@@ -5,6 +5,7 @@ export enum TitanMode {
   THEMIS = 'themis',
   ATLAS = 'atlas',
   IAPETUS = 'iapetus',
+  KRONOS = 'kronos',
 }
 
 export enum TitanRole {

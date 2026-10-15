@@ -12,7 +12,7 @@ DEFAULT_TIMEOUT = 120
 
 _ALLOWED_ENV_VARS = frozenset({
     "PATH", "HOME", "LANG", "LC_ALL", "SHELL", "USER", "LOGNAME",
-    "TMPDIR", "TERM", "PWD",
+    "TMPDIR", "TERM", "PWD", "PYTHONPATH", "VIRTUAL_ENV", "NODE_PATH",
 })
 
 
@@ -146,15 +146,8 @@ def _run_bash(ctx: ToolContext, args: dict) -> tuple[str, bool]:
         return "Empty command", True
     timeout = min(int(args.get("timeout", ctx.timeout)), 600)
     try:
-        parsed = shlex.split(raw_cmd)
-    except ValueError as e:
-        return f"Invalid command syntax: {e}", True
-    if not parsed:
-        return "Empty command", True
-    try:
         proc = subprocess.run(
-            parsed,
-            shell=False,
+            ["bash", "-c", raw_cmd],
             capture_output=True,
             text=True,
             cwd=str(ctx.workdir),
@@ -162,9 +155,11 @@ def _run_bash(ctx: ToolContext, args: dict) -> tuple[str, bool]:
             env=_safe_env(),
         )
     except FileNotFoundError:
-        return f"Command not found: {parsed[0]}", True
+        return "Command not found: bash", True
     except subprocess.TimeoutExpired as e:
-        out = (e.stdout or "") + (e.stderr or "")
+        stdout = e.stdout.decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+        stderr = e.stderr.decode("utf-8", errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+        out = stdout + stderr
         return f"[TIMEOUT after {timeout}s]\n{_truncate(out)}", True
     body = f"[exit {proc.returncode}]\n"
     if proc.stdout:
@@ -190,7 +185,9 @@ def _do_write(ctx: ToolContext, args: dict) -> tuple[str, bool]:
     if not _under_workdir(ctx, p):
         return f"Refused: {p} is outside workdir {ctx.workdir}", True
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(args["content"])
+    tmp = p.with_suffix(p.suffix + f".tmp.{os.getpid()}")
+    tmp.write_text(args["content"])
+    tmp.replace(p)
     return f"Wrote {len(args['content'])} chars to {p}", False
 
 
@@ -209,12 +206,16 @@ def _do_edit(ctx: ToolContext, args: dict) -> tuple[str, bool]:
     if not replace_all and text.count(old) > 1:
         return f"old_string occurs {text.count(old)} times in {p}; pass replace_all=true or expand context", True
     updated = text.replace(old, new) if replace_all else text.replace(old, new, 1)
-    p.write_text(updated)
+    tmp = p.with_suffix(p.suffix + f".tmp.{os.getpid()}")
+    tmp.write_text(updated)
+    tmp.replace(p)
     return f"Edited {p}", False
 
 
 def _do_list(ctx: ToolContext, args: dict) -> tuple[str, bool]:
     p = _resolve(ctx, args["path"])
+    if not _under_workdir(ctx, p):
+        return f"Refused: {p} is outside workdir {ctx.workdir}", True
     if not p.exists():
         return f"Not found: {p}", True
     if not p.is_dir():

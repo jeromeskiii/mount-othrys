@@ -5,6 +5,7 @@ import { COEUS_MODE } from './coeus.js'
 import { THEMIS_MODE } from './themis.js'
 import { ATLAS_MODE } from './atlas.js'
 import { IAPETUS_MODE } from './iapetus.js'
+import { KRONOS_MODE } from './kronos.js'
 
 export const TITAN_REGISTRY: Record<string, TitanConfig> = {
   heracles: HERACLES_MODE,
@@ -13,6 +14,7 @@ export const TITAN_REGISTRY: Record<string, TitanConfig> = {
   themis: THEMIS_MODE,
   atlas: ATLAS_MODE,
   iapetus: IAPETUS_MODE,
+  kronos: KRONOS_MODE,
 }
 
 export const LEGACY_ALIASES: Record<string, string> = {
@@ -21,6 +23,7 @@ export const LEGACY_ALIASES: Record<string, string> = {
   oracle: 'themis',
   hephaestus: 'iapetus',
   ultrawork: 'heracles',
+  coordinator: 'kronos',
 }
 
 export function getTitan(name: string, registry: Record<string, TitanConfig> = TITAN_REGISTRY): TitanConfig {

@@ -5,6 +5,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from . import __version__
 from .boulder_bridge import load_boulder_from_atlas, to_objective, find_blocked_tasks, find_next_pending
@@ -78,7 +79,7 @@ def cmd_analyze(args) -> None:
     workdir = Path(args.workdir or args.root).resolve()
     findings = []
     decisions = []
-    objective = args.objective
+    objective = args.objective or getattr(args, "prompt", None)
 
     if args.boulder:
         root = Path(args.root).resolve()
@@ -226,8 +227,8 @@ def cmd_execute(args) -> None:
     """Legacy: deep execution mode (preserved for backward compatibility)."""
     llm = _llm(args)
     workdir = Path(args.workdir or args.root).resolve()
-    findings = []
-    decisions = []
+    findings: list[str] = []
+    decisions: list[str] = []
     objective = args.objective
     analysis = None
 
@@ -254,8 +255,8 @@ def cmd_execute(args) -> None:
     if args.analysis_only:
         executor = DeepExecutor(llm=llm, workdir=workdir)
         analysis = executor.run_analysis(objective=objective, findings=findings, decisions=decisions)
-        payload = {"mode": "analysis_only", "analysis": analysis}
-        _print(payload, as_json=args.json)
+        analysis_payload = {"mode": "analysis_only", "analysis": analysis}
+        _print(analysis_payload, as_json=args.json)
         return
 
     executor = DeepExecutor(llm=llm, workdir=workdir)
@@ -271,7 +272,7 @@ def cmd_execute(args) -> None:
         max_tokens=args.max_tokens,
     )
 
-    payload = {
+    payload: dict[str, Any] = {
         "success": result.success,
         "blocked": result.blocked,
         "summary": result.summary,
@@ -304,6 +305,7 @@ def main() -> None:
     sub = p.add_subparsers(dest="command", required=True)
 
     s = sub.add_parser("analyze", help="analyze risks, failure modes, and edge cases")
+    s.add_argument("prompt", nargs="?", default=None, help="objective to analyze")
     s.add_argument("--objective", default=None, help="objective to analyze")
     s.add_argument("--boulder", default=None, help="atlas boulder name")
     s.add_argument("--task", default=None, help="specific task id within the boulder")

@@ -46,22 +46,22 @@ def _resolve_invocation(command: str) -> tuple[list[str], dict[str, str]]:
         "coeus": (
             repo_root / "coeus" / ".venv" / "bin" / "python",
             "coeus",
-            [repo_root / "coeus" / "src"],
+            [repo_root / "coeus" / "src", repo_root / "othrys" / "src"],
         ),
         "atlas": (
             repo_root / "atlas" / ".venv" / "bin" / "python",
             "atlas",
-            [repo_root / "atlas" / "src"],
+            [repo_root / "atlas" / "src", repo_root / "othrys" / "src"],
         ),
         "iapetus": (
             repo_root / "iapetus" / ".venv" / "bin" / "python",
             "iapetus",
-            [repo_root / "iapetus" / "src", repo_root / "atlas" / "src"],
+            [repo_root / "iapetus" / "src", repo_root / "atlas" / "src", repo_root / "othrys" / "src"],
         ),
         "talos": (
             repo_root / "talos" / ".venv" / "bin" / "python",
             "talos",
-            [repo_root / "talos" / "src", repo_root / "iapetus" / "src", repo_root / "atlas" / "src"],
+            [repo_root / "talos" / "src", repo_root / "iapetus" / "src", repo_root / "atlas" / "src", repo_root / "othrys" / "src"],
         ),
     }
     candidate = module_invocations.get(command)

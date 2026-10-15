@@ -33,7 +33,7 @@ export class ThemisAdapter implements TitanAdapter {
   constructor(options: ThemisAdapterOptions) {
     this.provider = new OpenAIProvider({
       apiKey: options.apiKey,
-      defaultModel: options.model ?? 'gpt-5.2',
+      defaultModel: options.model ?? 'gpt-4o',
     })
   }
 

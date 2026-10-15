@@ -72,19 +72,41 @@ def route_request(message: str, session_id: str | None = None) -> RouteResult:
     )
 
 
-def forward_to_titan(result: RouteResult, args: list[str], *, workdir: Path | None = None) -> int:
-    cmd: list[str]
-    env_extra = {}
+import shutil
+import sys
 
-    if result.titan == TITAN_COEUS:
-        cmd = ["coeus", result.subcommand or "interview"] + (args or [])
-    elif result.titan == TITAN_ATLAS:
-        cmd = ["atlas", result.subcommand or "run"] + args
-    elif result.titan == TITAN_IAPETUS:
-        cmd = ["iapetus", result.subcommand or "execute"] + args
+def resolve_titan_command(
+    titan: str, subcommand: str | None = None, args: list[str] | None = None
+) -> tuple[list[str], dict[str, str]]:
+    repo_root = Path(__file__).resolve().parents[3]
+    venv_python = repo_root / titan / ".venv" / "bin" / "python"
+    env_extra: dict[str, str] = {}
+
+    titan_src = str(repo_root / titan / "src")
+    othrys_src = str(repo_root / "othrys" / "src")
+    existing_pp = os.environ.get("PYTHONPATH", "")
+    env_extra["PYTHONPATH"] = f"{titan_src}:{othrys_src}" + (f":{existing_pp}" if existing_pp else "")
+
+    if venv_python.exists():
+        cmd = [str(venv_python), "-m", titan]
+    elif shutil.which(titan):
+        cmd = [titan]
     else:
-        return 1
+        cmd = [sys.executable, "-m", titan]
 
+    if subcommand:
+        cmd.append(subcommand)
+    if args:
+        cmd.extend(args)
+
+    return cmd, env_extra
+
+
+def forward_to_titan(result: RouteResult, args: list[str], *, workdir: Path | None = None) -> int:
+    if result.titan not in (TITAN_COEUS, TITAN_ATLAS, TITAN_IAPETUS):
+        return 1
+    subcmd = result.subcommand or ("interview" if result.titan == TITAN_COEUS else "run" if result.titan == TITAN_ATLAS else "execute")
+    cmd, env_extra = resolve_titan_command(result.titan, subcmd, args)
     env = {**os.environ, **env_extra}
     proc = subprocess.run(cmd, cwd=str(workdir or Path.cwd()), env=env)
     return proc.returncode

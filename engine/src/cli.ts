@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { resolve } from 'node:path'
 import { Command } from 'commander'
 import { TITAN_REGISTRY, getTitan, listTitans } from './modes/registry.js'
 import { TitanMode } from './modes/types.js'
@@ -41,11 +42,12 @@ program
     }
 
     if (opts.execute) {
-      const config = loadConfig({ rootDir: opts.workdir ?? '.' })
+      const workdir = resolveWorkdir(opts.workdir)
+      const config = loadConfig()
       const venvs = resolveVenvs(config.rootDir)
       const adapters = buildAdapters(config, venvs)
-      const runner = new WorkflowRunner(adapters, { rootDir: config.rootDir, workdir: opts.workdir ?? '.' })
-      const workflowResult = await runner.run(message, { rootDir: config.rootDir, workdir: opts.workdir })
+      const runner = new WorkflowRunner(adapters, { rootDir: config.rootDir, workdir })
+      const workflowResult = await runner.run(message, { rootDir: config.rootDir, workdir })
       if (opts.json) {
         console.log(JSON.stringify(workflowResult, null, 2))
       } else {
@@ -115,14 +117,15 @@ program
   .option('--workdir <dir>', 'working directory', '.')
   .option('--json', 'output as JSON')
   .action(async (message: string, opts: { titan?: string; workdir?: string; json?: boolean }) => {
-    const config = loadConfig({ rootDir: opts.workdir ?? '.' })
+    const workdir = resolveWorkdir(opts.workdir)
+    const config = loadConfig()
     const venvs = resolveVenvs(config.rootDir)
     const adapters = buildAdapters(config, venvs)
-    const runner = new WorkflowRunner(adapters, { rootDir: config.rootDir, workdir: opts.workdir ?? '.' })
+    const runner = new WorkflowRunner(adapters, { rootDir: config.rootDir, workdir })
 
     const result = await runner.run(message, {
       rootDir: config.rootDir,
-      workdir: opts.workdir,
+      workdir,
       titanOverride: opts.titan,
     })
 
@@ -171,6 +174,20 @@ program
       console.log(`  Root Dir:         ${config.rootDir}`)
     }
   })
+
+/**
+ * Resolve the mission working directory to an absolute path.
+ *
+ * bin/mount-othrys cds into engine/ before launching the CLI, so it passes
+ * the caller's original cwd via OTHRYS_INVOKED_FROM. The engine's rootDir
+ * must stay at the absolute Othrys root — overriding it with a relative
+ * workdir produced `./<titan>/.venv/bin/python` paths that resolved inside
+ * engine/ and failed to spawn (ENOENT).
+ */
+function resolveWorkdir(workdir?: string): string {
+  const base = process.env.OTHRYS_INVOKED_FROM ?? process.cwd()
+  return resolve(base, workdir ?? '.')
+}
 
 function buildAdapters(config: ReturnType<typeof loadConfig>, venvs: Record<string, string>): Map<string, TitanAdapter> {
   const adapters = new Map<string, TitanAdapter>()

@@ -6,7 +6,7 @@ describe("Themis Agent", () => {
     it("creates agent with default options", () => {
       const agent = createThemisAgent()
       expect(agent.name).toBe("themis")
-      expect(agent.model).toBe("openai/gpt-5.2")
+      expect(agent.model).toBe("openai/gpt-4o")
       expect(agent.temperature).toBe(0.1)
       expect(agent.thinking.budgetTokens).toBe(32000)
     })

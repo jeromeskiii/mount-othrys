@@ -124,8 +124,12 @@ def cmd_answer(args: argparse.Namespace) -> int:
 def _ask_loop(args: argparse.Namespace, store: DraftStore, draft: Draft) -> int:
     consultant = Consultant(_llm(args))
     if not sys.stdin.isatty():
-        print("Interactive ask-loop requires a TTY. Use 'coeus ask' / 'coeus answer' for scripted use.", file=sys.stderr)
-        return 2
+        _emit(
+            args,
+            {"name": draft.name, "phase": draft.phase.value, "draft": str(store.draft_path(draft.name)), "status": "draft_created"},
+            f"Draft '{draft.name}' created at {store.draft_path(draft.name)}. Interactive ask-loop requires a TTY. Use 'coeus ask {draft.name}' or 'coeus continue {draft.name}' for scripted use.",
+        )
+        return 0
     while draft.phase == Phase.INQUIRY:
         step = consultant.next_inquiry_step(draft)
         if step.action == "ask":
