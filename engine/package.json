@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && tsc --emitDeclarationOnly",
+    "build": "tsc && tsc --emitDeclarationOnly && node scripts/sync-routing-table.mjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest",

@@ -68,25 +68,52 @@ export interface RoutingMatch {
   readonly reason: string
 }
 
-/** Resolved from both `src/routing/` and `dist/routing/`, i.e. three levels up. */
-const TABLE_PATH = resolve(
-  import.meta.dirname ?? process.cwd(),
-  '../../../othrys/src/othrys/routing.table.json',
-)
+/**
+ * Preferred location: a copy of the table sitting beside the compiled output,
+ * placed there by `scripts/sync-routing-table.mjs` during `npm run build`. If
+ * that exists the engine has no dependency on the surrounding repository layout.
+ *
+ * Both paths are tried in order, so the same build works whether the engine runs
+ * from `dist/` (copied table) or is transpiled on the fly from `src/` by tsx or
+ * vitest (sibling table in the monorepo).
+ */
+function localTablePath(): string {
+  return resolve(import.meta.dirname ?? process.cwd(), 'routing.table.json')
+}
+
+function siblingTablePath(): string {
+  return resolve(import.meta.dirname ?? process.cwd(), '../../../othrys/src/othrys/routing.table.json')
+}
+
+/** Candidate paths in resolution order. Exposed so tests can pin the contract. */
+export function routingTableCandidates(): string[] {
+  return [localTablePath(), siblingTablePath()]
+}
 
 let cache: { entries: RoutingEntry[]; examples: RoutingExample[] } | undefined
 
 export function loadRoutingTable(): { entries: RoutingEntry[]; examples: RoutingExample[] } {
   if (cache) return cache
 
-  let raw: string
-  try {
-    raw = readFileSync(TABLE_PATH, 'utf8')
-  } catch (cause) {
+  const candidates = routingTableCandidates()
+  const failures: string[] = []
+  let raw: string | undefined
+
+  for (const candidate of candidates) {
+    try {
+      raw = readFileSync(candidate, 'utf8')
+      break
+    } catch (cause) {
+      failures.push(`${candidate}: ${(cause as Error).message}`)
+    }
+  }
+
+  if (raw === undefined) {
     throw new Error(
-      `Cannot read the canonical routing table at ${TABLE_PATH}. ` +
-        `Mount Othrys expects othrys/src/othrys/routing.table.json to sit alongside this package.`,
-      { cause },
+      'Cannot read the canonical routing table. Looked in:\n' +
+        failures.map(failure => `  - ${failure}`).join('\n') +
+        '\nRun `npm run build` to copy the table beside the engine output, or run the engine ' +
+        'from the repository so othrys/src/othrys/routing.table.json is available.',
     )
   }
 

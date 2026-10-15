@@ -1,6 +1,7 @@
-.PHONY: all test typecheck build check clean setup
+.PHONY: all test typecheck typecheck-ts typecheck-py typecheck-py-strict build check clean setup
 
 PYTHONPATH := othrys/src:atlas/src:coeus/src:iapetus/src:talos/src:kronos/src
+PY_TITANS := atlas coeus iapetus talos kronos
 
 all: check
 
@@ -20,7 +21,17 @@ typecheck-ts:
 typecheck-py:
 	PYTHONPATH=$(PYTHONPATH) python3 -m mypy othrys/src atlas/src coeus/src iapetus/src talos/src kronos/src
 
-typecheck: typecheck-ts typecheck-py
+# Mirrors CI's `python-titans` job: mypy from inside each package directory so
+# that package's own [tool.mypy] settings (several are `strict = true`) apply.
+# The aggregate target above does not use them, so without this the local gate
+# was weaker than CI.
+typecheck-py-strict:
+	@for t in $(PY_TITANS); do \
+		echo "  mypy (strict) $$t"; \
+		( cd $$t && PYTHONPATH=src:../othrys/src:../atlas/src:../coeus/src:../iapetus/src:../talos/src:../kronos/src python3 -m mypy src ) || exit 1; \
+	done
+
+typecheck: typecheck-ts typecheck-py typecheck-py-strict
 
 test-ts:
 	cd engine && npm test -- --run

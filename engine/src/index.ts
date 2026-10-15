@@ -8,6 +8,7 @@ export {
   routingTitans,
   routingExamples,
   matchRoutingRule,
+  routingTableCandidates,
 } from './routing/table.js'
 export type {
   RoutingEntry,

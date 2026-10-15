@@ -5,6 +5,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 
 SESSION_DIR = Path.home() / ".sisyphus" / "talos-sessions"
@@ -15,8 +16,8 @@ class TalosSession:
     session_id: str
     created_at: str
     updated_at: str
-    messages: list[dict] = field(default_factory=list)
-    todos: list[dict] = field(default_factory=list)
+    messages: list[dict[str, Any]] = field(default_factory=list)
+    todos: list[dict[str, Any]] = field(default_factory=list)
     titan: str = ""
     objective: str = ""
     status: str = "active"
@@ -80,7 +81,7 @@ def append_message(session: TalosSession, role: str, content: str) -> TalosSessi
     return session
 
 
-def update_todos(session: TalosSession, todos: list[dict]) -> TalosSession:
+def update_todos(session: TalosSession, todos: list[dict[str, Any]]) -> TalosSession:
     session.todos = todos
     save_session(session)
     return session

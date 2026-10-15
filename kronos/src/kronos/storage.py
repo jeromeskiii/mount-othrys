@@ -96,7 +96,7 @@ class FortressStore:
             )
             conn.commit()
 
-    def store_finding(self, campaign_id: str, key: str, value: str, titan: str, metadata: dict | None = None) -> None:
+    def store_finding(self, campaign_id: str, key: str, value: str, titan: str, metadata: dict[str, Any] | None = None) -> None:
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO knowledge (campaign_id, key, value, titan, metadata, created_at) "

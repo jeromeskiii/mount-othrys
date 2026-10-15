@@ -210,6 +210,7 @@ make check
 ./check-all.sh
 ```
 
-The medium-severity remediation of this repository (engine context propagation and the
-single canonical routing table) is documented with its evidence and remaining risks in
-[`docs/REMEDIATION.md`](docs/REMEDIATION.md).
+The remediations of this repository are documented with their evidence and remaining risks in
+[`docs/REMEDIATION.md`](docs/REMEDIATION.md) (engine context propagation, single canonical routing
+table) and [`docs/CI-GUARDRAIL.md`](docs/CI-GUARDRAIL.md) (CI pipeline repair, honest local gate,
+engine portability).

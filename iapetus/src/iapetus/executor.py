@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from othrys import AgentRunResult
 from .llm import DeepLLM
@@ -42,7 +42,7 @@ class DeepExecutor:
         *,
         llm: DeepLLM,
         workdir: Path,
-        on_event: Callable[[str, dict], None] | None = None,
+        on_event: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> None:
         self.llm = llm
         self.workdir = workdir

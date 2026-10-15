@@ -1,10 +1,10 @@
+from pathlib import Path
 from typing import Any
 
 from othrys import ToolContext, make_dispatcher as _make_othrys_dispatcher, tool_specs as _othrys_tool_specs
 
 
-def make_dispatcher(*, workdir=None) -> Any:
-    from pathlib import Path
+def make_dispatcher(*, workdir: str | Path | None = None) -> Any:
     wd = Path(workdir) if workdir else Path.cwd()
     ctx = ToolContext(workdir=wd)
     return _make_othrys_dispatcher(ctx)
