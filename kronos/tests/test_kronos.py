@@ -148,3 +148,15 @@ def test_dispatch_plan_atlas_requires_args():
         assert False, "Atlas should require explicit args"
     except ValueError:
         pass
+
+
+def test_dispatch_plan_coordinator_delegates_to_talos():
+    plan = build_dispatch_plan("coordinator", "coordinate the deployment")
+    assert plan.command == "talos"
+    assert plan.args == ["ask", "coordinate the deployment"]
+
+
+def test_dispatch_plan_coordinator_explicit_args_passthrough():
+    plan = build_dispatch_plan("coordinator", "coordinate", ["ask", "--json", "hello"])
+    assert plan.command == "talos"
+    assert plan.args == ["ask", "--json", "hello"]

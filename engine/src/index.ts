@@ -2,6 +2,19 @@ export { TitanMode, TitanRole, WorkflowPhase } from './modes/types.js'
 export type { TitanConfig, RouteResult, VerificationCheck, VerificationResult, WorkflowResult } from './modes/types.js'
 
 export { TITAN_REGISTRY, LEGACY_ALIASES, getTitan, listTitans } from './modes/registry.js'
+
+export {
+  loadRoutingTable,
+  routingTitans,
+  routingExamples,
+  matchRoutingRule,
+} from './routing/table.js'
+export type {
+  RoutingEntry,
+  RoutingPattern,
+  RoutingExample,
+  RoutingMatch,
+} from './routing/table.js'
 export { Router, route, routeExplicit } from './router.js'
 export type { RouterOptions } from './router.js'
 
@@ -21,7 +34,15 @@ export { PythonTitanAdapter } from './adapters/python-adapter.js'
 export { ThemisAdapter } from './adapters/themis-adapter.js'
 export { HeraclesAdapter } from './adapters/heracles-adapter.js'
 export type { TitanAdapter, TitanInput, TitanOutput, AdapterConfig } from './adapters/types.js'
-export { spawnPythonTitan } from './adapters/python-bridge.js'
+export { spawnPythonTitan, buildTitanInvocation } from './adapters/python-bridge.js'
+export type { TitanInvocation } from './adapters/python-bridge.js'
+export {
+  buildEngineContext,
+  serializeEngineContext,
+  resolveSystemPrompt,
+  CONTEXT_ENV_VAR,
+} from './adapters/engineContext.js'
+export type { EngineContextEnvelope } from './adapters/engineContext.js'
 
 export type { LLMProvider, LLMRequest, LLMResponse, LLMMessage } from './providers/LLMProvider.js'
 export { OpenAIProvider } from './providers/OpenAIProvider.js'

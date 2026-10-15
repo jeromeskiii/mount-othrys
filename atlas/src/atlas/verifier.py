@@ -3,13 +3,20 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from othrys import DEFAULT_TIMEOUT, MAX_OUTPUT_CHARS
 from .boulder import Task, Verification
 from .llm import AtlasLLM
 from .prompts import VERIFIER_SYSTEM, build_verifier_prompt
-from .tools import _truncate, DEFAULT_TIMEOUT
+
+
+def _truncate(text: str, max_chars: int = MAX_OUTPUT_CHARS) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + f"\n... [truncated to {max_chars} chars]"
 
 
 _VERDICT_RE = re.compile(r"^VERDICT:\s*(PASS|FAIL|INCONCLUSIVE)\s*$", re.MULTILINE | re.IGNORECASE)
@@ -25,12 +32,15 @@ class VerifyResult:
 
 def _check_code_integrity(workdir: Path) -> Verification | None:
     """Implicit integrity check (LSP-First principle)."""
-    py_files = list(workdir.glob("**/*.py"))
+    py_files = [
+        f for f in workdir.glob("**/*.py")
+        if ".venv" not in f.parts and "node_modules" not in f.parts
+    ]
     if not py_files:
         return None
 
     try:
-        cmd = ["python", "-m", "py_compile"] + [str(f.relative_to(workdir)) for f in py_files[:20]]
+        cmd = [sys.executable, "-m", "py_compile"] + [str(f.relative_to(workdir)) for f in py_files[:20]]
         proc = subprocess.run(cmd, capture_output=True, text=True, cwd=str(workdir), timeout=30)
         if proc.returncode != 0:
             return Verification(
@@ -81,7 +91,9 @@ def run_verifications(task: Task, workdir: Path) -> list[Verification]:
                 )
             )
         except subprocess.TimeoutExpired as e:
-            partial = (e.stdout or "") + (e.stderr or "")
+            out_str = e.stdout.decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+            err_str = e.stderr.decode("utf-8", errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+            partial = out_str + err_str
             out.append(
                 Verification(
                     command=v.command,

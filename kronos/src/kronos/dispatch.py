@@ -79,11 +79,11 @@ def build_dispatch_plan(titan_key: str, message: str, titan_args: list[str] | No
 
     if titan_key == "coordinator":
         if extra:
-            return DispatchPlan(command="kronos", args=extra, explanation="User-supplied Coordinator args")
+            return DispatchPlan(command="talos", args=extra, explanation="User-supplied Coordinator args dispatched to talos")
         return DispatchPlan(
-            command="kronos",
+            command="talos",
             args=["ask", message],
-            explanation="Strategic coordination request → `kronos ask <message>`",
+            explanation="Strategic coordination request delegated to orchestrator → `talos ask <message>`",
         )
 
     raise KeyError(f"Unknown titan key: {titan_key}")

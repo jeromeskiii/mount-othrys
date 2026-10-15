@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
+import os
 from pathlib import Path
 import yaml
 
@@ -102,7 +103,10 @@ class DraftStore:
 
     def save(self, draft: Draft) -> None:
         draft.touch()
-        self.state_path(draft.name).write_text(yaml.safe_dump(_serialize(draft), sort_keys=False))
+        target = self.state_path(draft.name)
+        tmp = target.with_suffix(f".tmp.{os.getpid()}")
+        tmp.write_text(yaml.safe_dump(_serialize(draft), sort_keys=False))
+        tmp.replace(target)
         self._render_draft_md(draft)
 
     def list_all(self) -> list[Draft]:

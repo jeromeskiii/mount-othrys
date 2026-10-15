@@ -32,4 +32,6 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# No ``addopts`` here: a repo-level ``-q`` stacks with a CLI ``-q`` into
+# ``-qq``, which suppresses pytest's final "N passed" summary line. Pass
+# ``-q`` on the command line when quiet output is wanted.

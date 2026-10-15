@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from .llm import DeepLLM, AgentRunResult
+from othrys import AgentRunResult
+from .llm import DeepLLM
 from .prompts import (
     DEEP_ANALYSIS_SYSTEM,
     DEEP_EXECUTION_SYSTEM,

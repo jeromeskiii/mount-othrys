@@ -46,8 +46,8 @@ show_status() {
     echo "=== Mount Othrys — Titan Status ==="
     echo ""
     
-    for titan in atlas Coeus Iapetus Talos Heracles Themis; do
-        if [ -d "$MOUNT_OTHRYS_ROOT/$titan" ] || [ -d "$MOUNT_OTHRYS_ROOT/${titan,,}" ]; then
+    for titan in atlas coeus iapetus talos heracles themis kronos; do
+        if [ -d "$MOUNT_OTHRYS_ROOT/$titan" ]; then
             echo "✓ $titan"
         else
             echo "✗ $titan (missing)"
@@ -64,20 +64,19 @@ show_status() {
     
     echo ""
     echo "=== Python Services ==="
-    for titan in atlas Coeus Iapetus Talos; do
-        titan_dir="$MOUNT_OTHRYS_ROOT/$titan"
-        titan_lower=$(echo "$titan" | tr '[:upper:]' '[:lower:]')
-        if [ -d "$titan_dir/.venv" ] || [ -d "$MOUNT_OTHRYS_ROOT/${titan_lower}/.venv" ]; then
+    for titan in atlas coeus iapetus talos kronos; do
+        if [ -d "$MOUNT_OTHRYS_ROOT/$titan/.venv" ]; then
             echo "✓ $titan venv exists"
         else
-            echo "✗ $titan venv missing"
+            echo "✗ $titan venv missing (run: bash setup.sh)"
         fi
     done
 }
 
 run_engine() {
+    local invoked_from="$PWD"
     cd "$ENGINE_DIR"
-    exec npx tsx src/cli.ts "$@"
+    OTHRYS_INVOKED_FROM="$invoked_from" exec npx tsx src/cli.ts "$@"
 }
 
 run_python_titan() {
@@ -86,11 +85,12 @@ run_python_titan() {
     local titan_dir
     
     case "$titan" in
-        coeus)   titan_dir="$MOUNT_OTHRYS_ROOT/Coeus" ;;
+        coeus)   titan_dir="$MOUNT_OTHRYS_ROOT/coeus" ;;
         atlas)   titan_dir="$MOUNT_OTHRYS_ROOT/atlas" ;;
-        iapetus)  titan_dir="$MOUNT_OTHRYS_ROOT/Iapetus" ;;
-        talos)    titan_dir="$MOUNT_OTHRYS_ROOT/Talos" ;;
-        *)        echo "Unknown Python Titan: $titan"; exit 1 ;;
+        iapetus) titan_dir="$MOUNT_OTHRYS_ROOT/iapetus" ;;
+        talos)   titan_dir="$MOUNT_OTHRYS_ROOT/talos" ;;
+        kronos)  titan_dir="$MOUNT_OTHRYS_ROOT/kronos" ;;
+        *)       echo "Unknown Python Titan: $titan"; exit 1 ;;
     esac
     
     local python_bin="$titan_dir/.venv/bin/python"
@@ -111,10 +111,33 @@ case "${1:-help}" in
     route|titan|ask|config)
         run_engine "$@"
         ;;
+    run)
+        # README-compatible form: run --titan <name> --prompt "<goal>"
+        shift
+        run_titan=""
+        run_prompt=""
+        while [ $# -gt 0 ]; do
+            case "$1" in
+                --titan)  run_titan="$2"; shift 2 ;;
+                --prompt) run_prompt="$2"; shift 2 ;;
+                *)        shift ;;
+            esac
+        done
+        if [ -z "$run_prompt" ]; then
+            echo "Error: run requires --prompt \"<goal>\""
+            echo "Example: mount-othrys run --titan talos --prompt \"Inspect project structure\""
+            exit 1
+        fi
+        if [ -n "$run_titan" ]; then
+            run_engine ask --titan "$run_titan" "$run_prompt"
+        else
+            run_engine ask "$run_prompt"
+        fi
+        ;;
     status)
         show_status
         ;;
-    coeus|atlas|iapetus|talos)
+    coeus|atlas|iapetus|talos|kronos)
         run_python_titan "$@"
         ;;
     *)

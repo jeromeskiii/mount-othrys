@@ -7,22 +7,48 @@ on:
     branches: [main, master]
 
 jobs:
-  engine:
-    name: Engine (TypeScript)
+  typescript-packages:
+    name: TypeScript (${{ matrix.pkg }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [engine, themis, heracles]
     defaults:
       run:
-        working-directory: engine
+        working-directory: ${{ matrix.pkg }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: engine/package-lock.json
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npx vitest --run
+          cache-dependency-path: ${{ matrix.pkg }}/package.json
+      - run: npm install --include=dev --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test -- --run
+      - run: npm run build
+
+  python-othrys:
+    name: Python (othrys core)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: othrys
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install mypy pytest
+      - name: Type check
+        run: mypy src
+      - name: Run tests
+        run: pytest -q
 
   python-titans:
     name: Python Titans (${{ matrix.titan }})
@@ -30,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        titan: [kronos, atlas, coeus, iapetus, talos]
+        titan: [atlas, coeus, iapetus, talos, kronos]
     defaults:
       run:
         working-directory: ${{ matrix.titan }}
@@ -40,11 +66,17 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install othrys
+      - name: Install local shared library (othrys)
         run: pip install -e ../othrys
+      - name: Install prerequisite local titans
+        run: |
+          pip install -e ../atlas --no-deps || true
+          pip install -e ../coeus --no-deps || true
+          pip install -e ../iapetus --no-deps || true
+          pip install -e ../talos --no-deps || true
       - name: Install Titan
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev]" || (pip install -e . && pip install mypy pytest)
       - name: Type check
-        run: mypy src
+        run: PYTHONPATH=src:../othrys/src:../atlas/src:../coeus/src:../iapetus/src:../talos/src:../kronos/src mypy src
       - name: Run tests
-        run: pytest -q
+        run: PYTHONPATH=src:../othrys/src:../atlas/src:../coeus/src:../iapetus/src:../talos/src:../kronos/src pytest -q

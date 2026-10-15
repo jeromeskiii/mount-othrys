@@ -22,7 +22,14 @@ from .prompts import (
     AMBIGUOUS_HANDLER_SYSTEM,
 )
 from .session import create_session, load_session, save_session, append_message, update_todos, list_sessions
-from .titan_router import route_request, TITAN_COEUS, TITAN_ATLAS, TITAN_IAPETUS, TITAN_DIRECT
+from .titan_router import (
+    route_request,
+    resolve_titan_command,
+    TITAN_COEUS,
+    TITAN_ATLAS,
+    TITAN_IAPETUS,
+    TITAN_DIRECT,
+)
 from .tools import make_dispatcher, tool_specs
 
 
@@ -90,18 +97,18 @@ def cmd_session(args) -> None:
         )
         return
     if args.sub == "show":
-        s = load_session(args.session_id)
-        if not s:
+        session_obj = load_session(args.session_id)
+        if not session_obj:
             _print({"error": f"Session {args.session_id} not found"}, as_json=args.json)
             sys.exit(1)
         _print(
             {
-                "session_id": s.session_id,
-                "titan": s.titan,
-                "objective": s.objective,
-                "status": s.status,
-                "messages": len(s.messages),
-                "todos": s.todos,
+                "session_id": session_obj.session_id,
+                "titan": session_obj.titan,
+                "objective": session_obj.objective,
+                "status": session_obj.status,
+                "messages": len(session_obj.messages),
+                "todos": session_obj.todos,
             },
             as_json=args.json,
         )
@@ -135,10 +142,10 @@ def cmd_ask(args) -> None:
         system = AMBIGUOUS_HANDLER_SYSTEM
         prompt = f"\n# User Request\n\n{message}\n\nAsk ONE clarifying question."
         llm = _llm(args)
-        result = llm.call(system=system, messages=[{"role": "user", "content": prompt}])
-        print(f"\n{result}")
+        ambiguous_response = llm.call(system=system, messages=[{"role": "user", "content": prompt}])
+        print(f"\n{ambiguous_response}")
         if session:
-            append_message(session, "assistant", result)
+            append_message(session, "assistant", ambiguous_response)
         return
 
     if args.session and session:
@@ -152,21 +159,24 @@ def cmd_ask(args) -> None:
             print(f"  Subcommand: {route.subcommand}")
 
     if route.titan in (TITAN_COEUS, TITAN_ATLAS, TITAN_IAPETUS):
-        titan_cmd = {
-            TITAN_COEUS: "coeus",
-            TITAN_ATLAS: "atlas",
-            TITAN_IAPETUS: "iapetus",
-        }.get(route.titan, "talos")
+        subcmd: str | None
         if route.titan == TITAN_COEUS:
-            if args.titan_args:
-                cmd = [titan_cmd] + args.titan_args
-            else:
-                cmd = [titan_cmd, route.subcommand or "interview", message]
+            subcmd = route.subcommand or "interview"
+            t_args = list(args.titan_args) if args.titan_args else [message]
+        elif route.titan == TITAN_ATLAS:
+            subcmd = route.subcommand or "run"
+            t_args = list(args.titan_args)
+        elif route.titan == TITAN_IAPETUS:
+            subcmd = route.subcommand or "execute"
+            t_args = list(args.titan_args) if args.titan_args else [message]
         else:
-            cmd = [titan_cmd, route.subcommand or "plan"] + args.titan_args
+            subcmd = route.subcommand
+            t_args = list(args.titan_args)
+
+        cmd, env_extra = resolve_titan_command(route.titan, subcmd, t_args)
         if not args.json:
             print(f"\n  Spawning: {' '.join(cmd)}")
-        env = {**os.environ, "TALOS_SESSION": session.session_id if session else ""}
+        env = {**os.environ, **env_extra, "TALOS_SESSION": session.session_id if session else ""}
         proc = subprocess.run(
             cmd, cwd=str(workdir), env=env, capture_output=True, text=True, timeout=600
         )

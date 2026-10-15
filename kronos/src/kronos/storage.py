@@ -27,9 +27,15 @@ class FortressStore:
         self.db_path = db_path
         self._init_db()
 
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path, timeout=10.0)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
     def _init_db(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             cur = conn.cursor()
             # Campaigns: High-level missions
             cur.execute("""
@@ -72,7 +78,7 @@ class FortressStore:
         import uuid
         cid = str(uuid.uuid4())
         now = time.time()
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT INTO campaigns VALUES (?, ?, ?, ?, ?, ?)",
                 (cid, objective, "active", lead_titan, now, now)
@@ -81,7 +87,7 @@ class FortressStore:
         return cid
 
     def record_handshake(self, campaign_id: str, handshake: Handshake) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT INTO handshakes (campaign_id, source_titan, target_titan, payload, confidence, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
@@ -91,7 +97,7 @@ class FortressStore:
             conn.commit()
 
     def store_finding(self, campaign_id: str, key: str, value: str, titan: str, metadata: dict | None = None) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "INSERT INTO knowledge (campaign_id, key, value, titan, metadata, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
@@ -100,7 +106,7 @@ class FortressStore:
             conn.commit()
 
     def get_campaign_context(self, campaign_id: str) -> dict[str, Any]:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             # Verify campaign exists
             cur = conn.execute("SELECT 1 FROM campaigns WHERE id = ?", (campaign_id,))
             if not cur.fetchone():

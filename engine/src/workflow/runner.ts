@@ -71,7 +71,13 @@ export class WorkflowRunner {
     let verification = { passed: result.passed, checks: result.checks }
     if (routeResult.config.requiresVerification && options.workdir) {
       this.eventBus?.emit('verification:start', { mode: routeResult.mode })
-      verification = await runVerifications({ workdir: options.workdir })
+      const envChecks = await runVerifications({ workdir: options.workdir })
+      // Merge instead of replace: environment checks must not mask a failed
+      // Titan run (e.g. spawn/exit failures) — all checks must pass.
+      verification = {
+        passed: verification.passed && envChecks.passed,
+        checks: [...verification.checks, ...envChecks.checks],
+      }
       this.eventBus?.emit('verification:complete', { mode: routeResult.mode, result: verification })
     }
 

@@ -179,3 +179,31 @@ def build_stress_test_prompt(
         parts.extend(f"- {f}" for f in findings)
     parts.append("\nExecute stress tests. End with `STRESS_RESULT: <PASS | PASS_WITH_CONCERNS | FAIL>`.")
     return "\n".join(parts)
+
+
+# Legacy / backward compatibility aliases
+DEEP_ANALYSIS_SYSTEM = RISK_ANALYSIS_SYSTEM
+DEEP_EXECUTION_SYSTEM = RISK_ANALYSIS_SYSTEM
+
+
+def build_execution_prompt(
+    *,
+    objective: str,
+    workdir: str,
+    analysis: str,
+    findings: list[str],
+    decisions: list[str],
+) -> str:
+    parts = [
+        f"# Objective\n\n{objective}",
+        f"\n# Working Directory\n\n`{workdir}`",
+        f"\n## Prior Risk Analysis\n\n{analysis}",
+    ]
+    if findings:
+        parts.append("\n## Known Findings\n")
+        parts.extend(f"- {f}" for f in findings)
+    if decisions:
+        parts.append("\n## Known Decisions\n")
+        parts.extend(f"- {d}" for d in decisions)
+    parts.append("\nAddress the above objective and risks. When finished, end with `DONE: <summary>` or `BLOCKED: <reason>`.")
+    return "\n".join(parts)

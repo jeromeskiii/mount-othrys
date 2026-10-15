@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
+import os
 from pathlib import Path
 import yaml
 
@@ -94,10 +95,10 @@ def _deserialize(data: dict) -> Boulder:
     tasks = []
     for t in raw_tasks:
         verifs = [Verification(**v) for v in t.pop("verifications", [])]
-        status = TaskStatus(t.pop("status", "pending"))
-        tasks.append(Task(verifications=verifs, status=status, **t))
-    status = BoulderStatus(data.pop("status", "ready"))
-    return Boulder(tasks=tasks, status=status, **data)
+        task_status = TaskStatus(t.pop("status", "pending"))
+        tasks.append(Task(verifications=verifs, status=task_status, **t))
+    boulder_status = BoulderStatus(data.pop("status", "ready"))
+    return Boulder(tasks=tasks, status=boulder_status, **data)
 
 
 class BoulderStore:
@@ -138,9 +139,10 @@ class BoulderStore:
     def save(self, boulder: Boulder) -> None:
         boulder.touch()
         self.boulder_dir(boulder.name).mkdir(parents=True, exist_ok=True)
-        self.state_path(boulder.name).write_text(
-            yaml.safe_dump(_serialize(boulder), sort_keys=False)
-        )
+        target = self.state_path(boulder.name)
+        tmp = target.with_suffix(f".tmp.{os.getpid()}")
+        tmp.write_text(yaml.safe_dump(_serialize(boulder), sort_keys=False))
+        tmp.replace(target)
         self._render_task_list(boulder)
         self._render_notepad(boulder)
 

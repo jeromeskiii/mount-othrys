@@ -16,7 +16,15 @@ export class Router {
   }
 
   route(message: string): RouteResult {
-    for (const [key, config] of Object.entries(this.registry)) {
+    // MF-2: precedence comes from the canonical table's routingPriority instead
+    // of declaration order, so a generic trigger can no longer shadow a more
+    // specific one. Array#sort is stable, so equal priorities keep registry
+    // order and the result stays deterministic.
+    const candidates = Object.entries(this.registry).sort(
+      ([, a], [, b]) => (b.routingPriority ?? 0) - (a.routingPriority ?? 0),
+    )
+
+    for (const [key, config] of candidates) {
       for (const trigger of config.triggers) {
         if (trigger.test(message)) {
           trigger.lastIndex = 0

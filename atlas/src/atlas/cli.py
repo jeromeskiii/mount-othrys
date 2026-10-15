@@ -248,6 +248,38 @@ def cmd_abort(args) -> None:
     _print({"boulder": args.name, "status": "aborted"}, as_json=args.json)
 
 
+def cmd_design(args) -> None:
+    """Initialize or preview a design boulder from a natural language objective."""
+    import re
+    store = _store(args)
+    raw_name = getattr(args, "name", None) or "design"
+    slug = re.sub(r"[^a-z0-9-]+", "-", raw_name.lower()).strip("-")[:40] or "design"
+    prompt = raw_name
+
+    plan_file = Path(args.root).resolve() / ".sisyphus" / "plans" / f"{slug}.md"
+    if not plan_file.exists():
+        plan_file.parent.mkdir(parents=True, exist_ok=True)
+        plan_file.write_text(f"# Plan: {slug}\n\nObjective: {prompt}\n\n## Tasks\n- [ ] Task 1: Analyze and design architecture for {prompt}\n")
+
+    from .boulder import Boulder, Task
+    task = Task(id="T1", phase="Design", title=f"Design {slug}", description=prompt, priority=1)
+    boulder = Boulder(name=slug, plan_path=str(plan_file), objective=prompt, tasks=[task])
+    store.save(boulder)
+    payload = {
+        "boulder": slug,
+        "objective": prompt,
+        "plan": str(plan_file),
+        "tasks": len(boulder.tasks),
+        "state_file": str(store.state_path(slug)),
+    }
+    if args.json:
+        _print(payload, as_json=True)
+    else:
+        print(f"Atlas Design Boulder created: {slug}")
+        print(f"  Plan: {plan_file}")
+        print(f"  Objective: {prompt}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(prog="atlas", description="Atlas — sequential orchestrator for Coeus plans")
     p.add_argument("--version", action="version", version=f"atlas {__version__}")
@@ -290,6 +322,10 @@ def main() -> None:
     s = sub.add_parser("abort", help="mark boulder aborted")
     s.add_argument("name")
     s.set_defaults(func=cmd_abort)
+
+    s = sub.add_parser("design", help="design architecture and initialize boulder")
+    s.add_argument("name", nargs="?", default="design", help="boulder name or design objective")
+    s.set_defaults(func=cmd_design)
 
     args = p.parse_args()
     try:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -68,7 +69,9 @@ def save_session(session: TalosSession) -> None:
 def _save(session: TalosSession) -> None:
     _ensure_dir()
     path = SESSION_DIR / f"{session.session_id}.json"
-    path.write_text(json.dumps(session.__dict__, indent=2, default=str))
+    tmp = path.with_suffix(f".tmp.{os.getpid()}")
+    tmp.write_text(json.dumps(session.__dict__, indent=2, default=str))
+    tmp.replace(path)
 
 
 def append_message(session: TalosSession, role: str, content: str) -> TalosSession:
@@ -87,8 +90,11 @@ def list_sessions() -> list[TalosSession]:
     _ensure_dir()
     out: list[TalosSession] = []
     for p in sorted(SESSION_DIR.glob("session_*.json")):
-        data = json.loads(p.read_text())
-        out.append(TalosSession(**data))
+        try:
+            data = json.loads(p.read_text())
+            out.append(TalosSession(**data))
+        except Exception:
+            continue
     return out
 
 

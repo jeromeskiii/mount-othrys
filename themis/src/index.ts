@@ -95,7 +95,7 @@ export interface ThemisOptions {
 
 export function createThemisAgent(options: ThemisOptions = {}) {
   const {
-    model = "openai/gpt-5.2",
+    model = "openai/gpt-4o",
     temperature = 0.1,
     thinkingBudget = 32000,
     textVerbosity = "high",

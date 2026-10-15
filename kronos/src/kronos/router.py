@@ -1,48 +1,48 @@
 from __future__ import annotations
 
+from othrys import match_rule
+
 from .llm import KronosLLM
 from .registry import TITAN_REGISTRY, TitanInfo, get_titan
 
-ROUTING_RULES: list[tuple[list[str], str]] = [
-    (["plan this", "create a plan", "make a plan", "build a plan",
-      "help me think", "what should we", "scope this",
-      "spec for", "define the approach"], "coeus"),
-    (["run the plan", "execute the plan", "atlas", "start the boulder",
-      "continue the boulder", "boulder", "sequential execution", "plan-driven"], "atlas"),
-    (["iapetus", "deeply analyze", "deep analyze", "complex refactor",
-      "multi-file", "architectural", "deep execution", "think deeply"], "iapetus"),
-    (["consult on", "themis", "architecture decision", "review this",
-      "debug this", "what do you think about", "is this a good approach"], "themis"),
-    (["ultrawork", "ulw", "heracles", "finish this now", "just do it",
-      "no excuses", "relentless"], "heracles"),
-    (["coordinator", "orchestrate", "coordinate this", "complex problem",
-      "multi-disciplinary", "break this down", "delegation", "delegate"], "coordinator"),
-]
+#: Canonical table Titan -> this registry's key.
+#:
+#: The canonical table uses the engine's vocabulary, which has a `kronos` Titan;
+#: Kronos's own registry names that role `coordinator`. Everything else maps
+#: one-to-one.
+CANONICAL_TO_REGISTRY: dict[str, str] = {
+    "coeus": "coeus",
+    "atlas": "atlas",
+    "iapetus": "iapetus",
+    "talos": "talos",
+    "themis": "themis",
+    "heracles": "heracles",
+    "kronos": "coordinator",
+}
 
 
 def route(message: str, llm: KronosLLM | None = None) -> tuple[TitanInfo, str]:
-    msg = message.lower()
+    """Resolve a request to a Titan.
 
-    # 1. Fast Path: Keyword matching
-    for keywords, titan_key in ROUTING_RULES:
-        for kw in keywords:
-            if kw in msg:
-                info = TITAN_REGISTRY[titan_key]
-                return info, f"Keyword match: '{kw}' → {titan_key}"
+    MF-2: this module used to carry its own ``ROUTING_RULES`` keyword list, which
+    had drifted from the engine's triggers and from Talos's. Routing now defers
+    to the single canonical table via ``othrys.routing``; only the optional
+    semantic-classification step remains local.
+    """
+    found = match_rule(message)
+    if found is not None:
+        registry_key = CANONICAL_TO_REGISTRY.get(found.titan)
+        if registry_key is not None:
+            return TITAN_REGISTRY[registry_key], found.reason
 
-    # 2. Semantic Path: LLM classification
-    if llm:
+    # Semantic path: reached only when no canonical rule matched.
+    if llm is not None:
         try:
             titan_key = llm.classify_intent(message, TITAN_REGISTRY)
             return TITAN_REGISTRY[titan_key], f"Semantic classification → {titan_key}"
         except Exception:
             # Fallback to defaults on LLM failure
             pass
-
-    # 3. Heuristic Fallback
-    if any(kw in msg for kw in ["implement", "add the", "build the", "create the",
-                                  "fix the", "change the", "edit the"]):
-        return TITAN_REGISTRY["talos"], "Implementation request → direct execution"
 
     return TITAN_REGISTRY["talos"], "Default to Talos (primary orchestrator)"
 

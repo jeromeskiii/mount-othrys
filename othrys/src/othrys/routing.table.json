@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "description": "Canonical Mount Othrys routing table. Single source of truth for intent -> Titan routing, consumed by the TypeScript engine (engine/src/routing/table.ts) and by Python consumers through othrys.routing. Adding or changing an intent means editing this file only.",
+  "precedence": "Every entry whose pattern matches scores its own weight. The highest weight wins; ties resolve to the earliest entry in this array. A message matching nothing falls through to the caller's default Titan.",
+  "entries": [
+    {
+      "id": "heracles-high-intensity",
+      "titan": "heracles",
+      "weight": 90,
+      "description": "Explicit high-intensity / ultrawork intent",
+      "patterns": [
+        { "pattern": "heracles", "flags": "i" },
+        { "pattern": "\\bherc\\b", "flags": "i" },
+        { "pattern": "ultrawork", "flags": "i" },
+        { "pattern": "\\bulw\\b", "flags": "i" },
+        { "pattern": "finish this now", "flags": "i" },
+        { "pattern": "no excuses", "flags": "i" },
+        { "pattern": "relentless", "flags": "i" },
+        { "pattern": "just do it", "flags": "i" }
+      ]
+    },
+    {
+      "id": "coeus-planning",
+      "titan": "coeus",
+      "weight": 80,
+      "description": "Strategic planning and scoping",
+      "patterns": [
+        { "pattern": "plan this", "flags": "i" },
+        { "pattern": "create a plan", "flags": "i" },
+        { "pattern": "make a plan", "flags": "i" },
+        { "pattern": "build a plan", "flags": "i" },
+        { "pattern": "help me think", "flags": "i" },
+        { "pattern": "scope this", "flags": "i" },
+        { "pattern": "spec for", "flags": "i" },
+        { "pattern": "define the approach", "flags": "i" },
+        { "pattern": "what should we", "flags": "i" }
+      ]
+    },
+    {
+      "id": "themis-advisory",
+      "titan": "themis",
+      "weight": 80,
+      "description": "Read-only advisory / architecture consultation",
+      "patterns": [
+        { "pattern": "consult on", "flags": "i" },
+        { "pattern": "themis", "flags": "i" },
+        { "pattern": "oracle", "flags": "i" },
+        { "pattern": "architecture decision", "flags": "i" },
+        { "pattern": "review this", "flags": "i" },
+        { "pattern": "review the", "flags": "i" },
+        { "pattern": "debug this", "flags": "i" },
+        { "pattern": "what do you think", "flags": "i" },
+        { "pattern": "is this a good approach", "flags": "i" }
+      ]
+    },
+    {
+      "id": "atlas-orchestration",
+      "titan": "atlas",
+      "weight": 70,
+      "description": "Plan-driven boulder execution and system design",
+      "patterns": [
+        { "pattern": "atlas", "flags": "i" },
+        { "pattern": "boulder", "flags": "i" },
+        { "pattern": "system design", "flags": "i" },
+        { "pattern": "design the system", "flags": "i" },
+        { "pattern": "architecture review", "flags": "i" },
+        { "pattern": "design review", "flags": "i" },
+        { "pattern": "plan the architecture", "flags": "i" },
+        { "pattern": "complete this todo", "flags": "i" },
+        { "pattern": "run the plan", "flags": "i" },
+        { "pattern": "execute the plan", "flags": "i" },
+        { "pattern": "sequential execution", "flags": "i" },
+        { "pattern": "plan-driven", "flags": "i" }
+      ]
+    },
+    {
+      "id": "kronos-coordination",
+      "titan": "kronos",
+      "weight": 70,
+      "description": "Cross-Titan coordination and goal decomposition",
+      "patterns": [
+        { "pattern": "kronos", "flags": "i" },
+        { "pattern": "supreme", "flags": "i" },
+        { "pattern": "meta-orchestrat", "flags": "i" },
+        { "pattern": "coordinate this", "flags": "i" },
+        { "pattern": "campaign", "flags": "i" },
+        { "pattern": "complex multi-disciplinary", "flags": "i" },
+        { "pattern": "multi-disciplinary", "flags": "i" },
+        { "pattern": "break this down", "flags": "i" },
+        { "pattern": "decompose", "flags": "i" },
+        { "pattern": "orchestrate", "flags": "i" },
+        { "pattern": "coordinator", "flags": "i" }
+      ]
+    },
+    {
+      "id": "iapetus-deep-execution",
+      "titan": "iapetus",
+      "weight": 60,
+      "description": "Deep analysis, risk surface, and multi-file execution",
+      "patterns": [
+        { "pattern": "iapetus", "flags": "i" },
+        { "pattern": "risk analysis", "flags": "i" },
+        { "pattern": "what can break", "flags": "i" },
+        { "pattern": "what could go wrong", "flags": "i" },
+        { "pattern": "edge cases", "flags": "i" },
+        { "pattern": "failure modes", "flags": "i" },
+        { "pattern": "stress test", "flags": "i" },
+        { "pattern": "large refactor", "flags": "i" },
+        { "pattern": "deep implementation", "flags": "i" },
+        { "pattern": "deep execution", "flags": "i" },
+        { "pattern": "deep analyz", "flags": "i" },
+        { "pattern": "deeply analyz", "flags": "i" },
+        { "pattern": "deep ", "flags": "i" },
+        { "pattern": "think deeply", "flags": "i" },
+        { "pattern": "thorough analysis", "flags": "i" },
+        { "pattern": "complex refactor", "flags": "i" },
+        { "pattern": "implement[^.]*complex", "flags": "i" },
+        { "pattern": "complex[^.]*implement", "flags": "i" },
+        { "pattern": "multi-file", "flags": "i" },
+        { "pattern": "architectural", "flags": "i" }
+      ]
+    },
+    {
+      "id": "talos-default-execution",
+      "titan": "talos",
+      "weight": 10,
+      "description": "Generic implementation intent; lowest weight so any specific intent outranks it",
+      "patterns": [
+        { "pattern": "implement", "flags": "i" },
+        { "pattern": "add the", "flags": "i" },
+        { "pattern": "build the", "flags": "i" },
+        { "pattern": "create the", "flags": "i" },
+        { "pattern": "fix the", "flags": "i" },
+        { "pattern": "change the", "flags": "i" },
+        { "pattern": "edit the", "flags": "i" },
+        { "pattern": "write the", "flags": "i" },
+        { "pattern": "do this task", "flags": "i" }
+      ]
+    }
+  ],
+  "examples": [
+    { "message": "Plan this feature", "titan": "coeus" },
+    { "message": "plan this feature for me", "titan": "coeus" },
+    { "message": "help me think through this feature", "titan": "coeus" },
+    { "message": "create a plan for the migration", "titan": "coeus" },
+    { "message": "Consult on architecture", "titan": "themis" },
+    { "message": "consult on this architecture decision", "titan": "themis" },
+    { "message": "review this design", "titan": "themis" },
+    { "message": "what do you think about this approach", "titan": "themis" },
+    { "message": "Complete this todo list", "titan": "atlas" },
+    { "message": "run the atlas boulder", "titan": "atlas" },
+    { "message": "design the system for billing", "titan": "atlas" },
+    { "message": "Implement this complex work", "titan": "iapetus" },
+    { "message": "deep analyze the codebase", "titan": "iapetus" },
+    { "message": "what can break if we deploy this", "titan": "iapetus" },
+    { "message": "stress test the checkout flow", "titan": "iapetus" },
+    { "message": "Do this task", "titan": "talos" },
+    { "message": "fix the bug in auth.py", "titan": "talos" },
+    { "message": "hello there", "titan": "talos" },
+    { "message": "FINISH THIS NOW", "titan": "heracles" },
+    { "message": "ultrawork finish this entire feature now", "titan": "heracles" },
+    { "message": "Complex multi-disciplinary problem", "titan": "kronos" },
+    { "message": "coordinate this release", "titan": "kronos" },
+    { "message": "orchestrate the campaign", "titan": "kronos" }
+  ]
+}
