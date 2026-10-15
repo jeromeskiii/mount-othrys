@@ -1,0 +1,8 @@
+# Evidence: CI for PR #1 (fix/mount-othrys-medium-findings).
+# Branch/merge runs both FAILED: 5 of 9 jobs red from two pre-existing causes (mypy not
+# installed for atlas/coeus; strict mypy over unannotated iapetus/talos/kronos).
+# This is the baseline that pass 3 (G-1) repaired.
+
+poll 1: completed failure
+--- merge run 38678703780 job conclusions ---
+see docs/REMEDIATION.md section "Observed CI results" for the per-job breakdown

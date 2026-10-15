@@ -1,0 +1,19 @@
+# Evidence: CI for PR #2 (fix/ci-guardrail-and-engine-portability) and the post-merge
+# push run on main. All 9 jobs succeeded - the first green pipeline in this repo.
+
+run=38680356868
+poll 1: queued 
+poll 2: in_progress 
+poll 3: in_progress 
+poll 4: in_progress 
+poll 5: completed success
+success	Python Titans (talos)
+success	Python Titans (atlas)
+success	Python Titans (coeus)
+success	TypeScript (themis)
+success	TypeScript (engine)
+success	Python (othrys core)
+success	TypeScript (heracles)
+success	Python Titans (iapetus)
+success	Python Titans (kronos)
+--- post-merge push run on main: 38680480430 success, 9/9 jobs (see docs/CI-GUARDRAIL.md) ---

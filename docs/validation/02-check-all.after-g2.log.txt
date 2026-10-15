@@ -1,0 +1,91 @@
+# Evidence: ./check-all.sh after the G-2 fix (5 steps, CI-equivalent strict mypy)
+# Captured: 2026-10-14 21:11 local | Result: exit 0
+
+==========================================
+ Mount Othrys: Verification 
+==========================================
+
+[1/5] TypeScript Type Checks...
+✓ TypeScript type checking passed!
+
+[2/5] Python Type Checks (mypy, repo aggregate)...
+Success: no issues found in 54 source files
+✓ Python type checking passed!
+
+[3/5] Python Type Checks (mypy, per-package strict — mirrors CI)...
+  > mypy atlas
+Success: no issues found in 11 source files
+  > mypy coeus
+Success: no issues found in 7 source files
+  > mypy iapetus
+Success: no issues found in 8 source files
+  > mypy talos
+Success: no issues found in 11 source files
+  > mypy kronos
+Success: no issues found in 9 source files
+✓ Python strict type checking passed!
+
+[4/5] TypeScript Tests (vitest)...
+
+> @mount-othrys/engine@0.1.0 test
+> vitest --run
+
+
+ RUN  v3.2.4 /Users/ohmskiii/mount-othrys/engine
+
+ ✓ tests/router.test.ts (6 tests) 2ms
+ ✓ tests/toolGuard.test.ts (10 tests) 2ms
+ ✓ tests/routingTable.test.ts (9 tests) 4ms
+ ✓ tests/routingTablePackaging.test.ts (4 tests) 36ms
+ ✓ tests/engine.test.ts (3 tests) 2ms
+ ✓ tests/contextPropagation.test.ts (10 tests) 72ms
+
+ Test Files  6 passed (6)
+      Tests  42 passed (42)
+   Start at  21:11:16
+   Duration  286ms (transform 166ms, setup 0ms, collect 361ms, tests 117ms, environment 0ms, prepare 212ms)
+
+
+> @mount-othrys/themis@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/themis
+
+ ✓ src/index.test.ts (15 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  21:11:17
+   Duration  169ms (transform 23ms, setup 0ms, collect 20ms, tests 2ms, environment 0ms, prepare 36ms)
+
+
+> @mount-othrys/heracles@1.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.7 /Users/ohmskiii/mount-othrys/heracles
+
+ ✓ src/heracles/index.test.ts (10 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  21:11:17
+   Duration  166ms (transform 22ms, setup 0ms, collect 19ms, tests 2ms, environment 0ms, prepare 38ms)
+
+✓ TypeScript tests passed!
+
+[5/5] Python Tests (pytest)...
+........................................................................ [ 67%]
+..................................                                       [100%]
+106 passed in 0.46s
+✓ Python tests passed!
+
+==========================================
+ ALL CHECKS PASSED ✓
+==========================================
+Covered: TypeScript typecheck + tests (engine, themis, heracles);
+         Python typecheck (aggregate + per-package strict) + tests.
+Not covered: end-to-end agent runs (these need ANTHROPIC_API_KEY);
+             behaviour outside macOS/Linux; see docs/REMEDIATION.md.
+EXIT=0
